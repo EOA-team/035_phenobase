@@ -12,7 +12,7 @@ of wrestling with unorganized data, scripts, and models.
 ## Installation
 
 ```bash
-git clone git@github.com:EOA-team/035_phenobase.git
+git clone https://github.com/EOA-team/035_phenobase.git
 conda env create -f environment.yml
 conda activate 035_phenobase_py312
 ```
