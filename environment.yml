@@ -1,0 +1,13 @@
+     name: 035_phenobase
+     channels:
+       - conda-forge
+       - defaults
+     dependencies:
+       - python=3.12
+       - mypy
+       - pylint
+       - pytest
+       - pytest-cov
+       - pip
+       - pip:
+         # pip-only packages go here if needed

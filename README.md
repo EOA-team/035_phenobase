@@ -14,7 +14,7 @@ of wrestling with unorganized data, scripts, and models.
 ```bash
 git clone https://github.com/EOA-team/035_phenobase.git
 conda env create -f environment.yml
-conda activate 035_phenobase_py312
+conda activate 035_phenobase
 ```
 
 ## Project Structure
