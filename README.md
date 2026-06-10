@@ -23,6 +23,7 @@ conda activate 035_phenobase
 ├── src/              # source code
 ├── tests/            # tests
 ├── data/             # input data (excluded from git)
+├── docs/             # cheatsheets, ...
 ├── results/          # outputs (excluded from git)
 ├── .github/workflows # CI configuration
 ├── environment.yml
