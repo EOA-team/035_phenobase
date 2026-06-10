@@ -25,7 +25,7 @@ jobs:
           cache-environment-key: ${{ runner.os }}-${{ hashFiles('environment.yml') }}
 
       - name: mypy
-        run: mypy src/.
+        run: mypy src/
 
       - name: pylint
         run: pylint $(git ls-files '*.py') --fail-under=8.0
