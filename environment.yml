@@ -9,6 +9,8 @@
        - pylint
        - pytest
        - pytest-cov
+       - python-dotenv
+       - smbprotocol
        - pip
        - pip:
          # pip-only packages go here if needed
