@@ -18,7 +18,7 @@ def test_show_nas_config(host, user, nas_config):
 def test_read_access(host, user, nas_config):
     """ Test read access by checking the contents of the configured UNC path are not empty """
     print("Testing read access...")
-    print(f"Host: {nas_config[f'host_{host}']}")
+    print(f"Host: {nas_config['hosts'][host]}")
     print(f"User: {nas_config['users'][user]['username']}")
     smbclient.reset_connection_cache()
     register_nas_host(nas_config, host, user)

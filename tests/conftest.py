@@ -10,8 +10,10 @@ load_dotenv()  # Load environment variables from .env file
 def nas_config():
     """ Configurations used for NAS tests"""
     return {
-        "host_mirror": os.environ["NAS_HOST_MIRROR"],
-        "host_origin": os.environ["NAS_HOST_ORIGIN"],
+        "hosts": {
+            "mirror": os.environ["NAS_HOST_MIRROR"],
+            "origin": os.environ["NAS_HOST_ORIGIN"],
+        },
         "share": "Data-EODrone",
         "folder": "drone",
         "users": {
