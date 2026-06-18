@@ -12,5 +12,6 @@
        - pip
        - python-dotenv
        - psycopg2
+       - sqlalchemy
        - pip:
          # pip-only packages go here if needed
