@@ -10,5 +10,7 @@
        - pytest
        - pytest-cov
        - pip
+       - python-dotenv
+       - psycopg2
        - pip:
          # pip-only packages go here if needed
