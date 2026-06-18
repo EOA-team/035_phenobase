@@ -28,7 +28,6 @@ def test_postgres_version(db1_connect, version):
     cur = db1_connect.cursor()
     cur.execute("SELECT version();")
     result = cur.fetchone()[0]
-    print(f"PostgreSQL version: {result}")
     assert version in result
     cur.close()
 
@@ -41,9 +40,19 @@ def test_installed_extensions(db1_connect, expected_ext):
     cur = db1_connect.cursor()
     cur.execute("SELECT extname FROM pg_extension")
     installed_ext = [row[0] for row in cur.fetchall()]
-    print(f"Installed extensions: {installed_ext}")
     cur.close()
     assert expected_ext in installed_ext
+
+@pytest.mark.parametrize("expected_ext", [
+         "plpgsql",
+         "postgis"
+     ])
+def test_available_extensions(db1_connect, expected_ext):
+    cur = db1_connect.cursor()
+    cur.execute("SELECT name, default_version, comment FROM pg_available_extensions ORDER BY name")
+    available_ext = [row[0] for row in cur.fetchall()]
+    cur.close()
+    assert expected_ext in available_ext 
 
 def test_postgis_version(db1_connect):
     cur = db1_connect.cursor()
@@ -52,13 +61,12 @@ def test_postgis_version(db1_connect):
         pytest.skip("PostGIS not installed")
     cur.execute("SELECT PostGIS_Version();")
     result = cur.fetchone()[0]
-    print(f"PostGIS version: {result}")
     assert result != ""
     cur.close()
 
 @pytest.mark.parametrize("expected_dbs", [
          "postgres","mydb","template1",
-         "template0","db1"
+         "template0","db1", "phenobase"
      ])
 def test_available_databases(db1_connect, expected_dbs):
     """ Check that expected databases are available in the PostgreSQL server """

@@ -14,23 +14,23 @@ base_url = URL.create(
     port=os.getenv("DB_PORT"),
 )
 
-# 0. See Privileges of DB User
-engine = create_engine(base_url.set(database="db1"))
-with engine.connect() as conn:
-    result = conn.execute(text("SELECT current_user, session_user;"))
-    print(result.fetchone())
+# # 0. See Privileges of DB User
+# engine = create_engine(base_url.set(database="db1"))
+# with engine.connect() as conn:
+#     result = conn.execute(text("SELECT current_user, session_user;"))
+#     print(result.fetchone())
 
-    # Check CREATEDB and superuser privileges
-    result = conn.execute(text("""
-        SELECT rolname, rolcreatedb, rolsuper, rolcreaterole
-        FROM pg_roles WHERE rolname = current_user;
-    """))
-    row = result.fetchone()
-    print(f"User: {row[0]}, CREATEDB: {row[1]}, SUPERUSER: {row[2]}")
+#     # Check CREATEDB and superuser privileges
+#     result = conn.execute(text("""
+#         SELECT rolname, rolcreatedb, rolsuper, rolcreaterole
+#         FROM pg_roles WHERE rolname = current_user;
+#     """))
+#     row = result.fetchone()
+#     print(f"User: {row[0]}, CREATEDB: {row[1]}, SUPERUSER: {row[2]}")
 
-    # Alternative quick check
-    result = conn.execute(text("SHOW is_superuser;"))
-    print(f"is_superuser: {result.fetchone()[0]}")   
+#     # Alternative quick check
+#     result = conn.execute(text("SHOW is_superuser;"))
+#     print(f"is_superuser: {result.fetchone()[0]}")   
 
 # 1. Connect to 'postgres' to create DB
 engine = create_engine(
@@ -41,12 +41,12 @@ with engine.connect() as conn:
     if not result.fetchone():
         conn.execute(text("CREATE DATABASE phenobase"))
 
-# 2. Connect to 'phenobase' to install PostGIS
-engine = create_engine(base_url.set(database="db1"))
-with engine.connect() as conn:
-    conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
-    result = conn.execute(text("SELECT PostGIS_Version()"))
-    print(result.scalar())
+# # 2. Connect to 'phenobase' to install PostGIS
+# engine = create_engine(base_url.set(database="db1"))
+# with engine.connect() as conn:
+#     conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+#     result = conn.execute(text("SELECT PostGIS_Version()"))
+#     print(result.scalar())
 
 
 # import psycopg2
