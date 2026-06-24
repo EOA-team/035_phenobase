@@ -52,8 +52,8 @@ def test_available_databases(phenobase, expected_dbs):
     assert expected_dbs in available_dbs
     cur.close()
 
-def test_postgis_crud_roundtrip(phenobase):
-    """C=Create, R=Read, U=Update, D=Delete — full round-trip with geometry."""
+def test_postgis_crud(phenobase):
+    """C=Create, R=Read, U=Update, D=Delete — full crud with geometry."""
     cur = phenobase.cursor()
 
     # C :Create temp table and insert 3 polygons
