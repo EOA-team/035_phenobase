@@ -1,98 +1,112 @@
 """ Tests to verify that the PostgreSQL database is accessible and functioning correctly.
 These tests check the database version, available databases, PostGIS extension, and basic insert/query operations"""
 
-import psycopg2
 import pytest
-import os 
 from dotenv import load_dotenv
+from src.postgresql_helper import connect_to_database
 
 load_dotenv()  # Load environment variables from .env file
 
 @pytest.fixture
-def db1_connect():
-    """PostgreSQL connection to db1, which is a test database provided by IT
-    Opens connection before every test and closes it after test is done."""
-    conn = psycopg2.connect(
-        dbname="db1", 
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT")
-       )
+def phenobase():
+    """PostgreSQL connection to database with the name phenobase"""
+    conn = connect_to_database(dbname="phenobase")
     yield conn
     conn.close()
 
 @pytest.mark.parametrize("version", ["PostgreSQL 16.14"])
-def test_postgres_version(db1_connect, version):
-    """ Check connection to PostgreSQL Server by verifying version """
-    cur = db1_connect.cursor()
+def test_postgres_version(phenobase, version):
+    """ Check expected PostgreSQL version is installed on the server """
+    cur = phenobase.cursor()
     cur.execute("SELECT version();")
     result = cur.fetchone()[0]
+    cur.close()
     assert version in result
-    cur.close()
+    
 
-@pytest.mark.parametrize("expected_ext", [
-         "plpgsql",
-         "postgis"
-     ])
-def test_installed_extensions(db1_connect, expected_ext):
-    """ Check that expected extensions are installed in the database """
-    cur = db1_connect.cursor()
-    cur.execute("SELECT extname FROM pg_extension")
-    installed_ext = [row[0] for row in cur.fetchall()]
-    cur.close()
-    assert expected_ext in installed_ext
-
-@pytest.mark.parametrize("expected_ext", [
-         "plpgsql",
-         "postgis"
-     ])
-def test_available_extensions(db1_connect, expected_ext):
-    cur = db1_connect.cursor()
+@pytest.mark.parametrize("expected_ext", ["postgis", "plpgsql"])
+def test_available_extensions(phenobase, expected_ext):
+    """ Check that expected extensions are available on the Database"""
+    cur = phenobase.cursor()
     cur.execute("SELECT name, default_version, comment FROM pg_available_extensions ORDER BY name")
     available_ext = [row[0] for row in cur.fetchall()]
     cur.close()
     assert expected_ext in available_ext 
 
-def test_postgis_version(db1_connect):
-    cur = db1_connect.cursor()
-    cur.execute("SELECT extname FROM pg_extension WHERE extname = 'postgis'")
-    if not cur.fetchone():
-        pytest.skip("PostGIS not installed")
+@pytest.mark.parametrize("version", ["3.4"])
+def test_postgis_version(phenobase, version):
+    """ Check that PostGIS extension is installed and has the expected version"""
+    cur = phenobase.cursor()
     cur.execute("SELECT PostGIS_Version();")
     result = cur.fetchone()[0]
-    assert result != ""
+    assert version in result
     cur.close()
 
-@pytest.mark.parametrize("expected_dbs", [
-         "postgres","mydb","template1",
-         "template0","db1", "phenobase"
-     ])
-def test_available_databases(db1_connect, expected_dbs):
-    """ Check that expected databases are available in the PostgreSQL server """
-    cur = db1_connect.cursor()
+@pytest.mark.parametrize("expected_dbs", ["phenobase"])
+def test_available_databases(phenobase, expected_dbs):
+    """ Check that expected databases are available on the PostgreSQL server """
+    cur = phenobase.cursor()
     cur.execute("SELECT datname FROM pg_database;")
     result = cur.fetchall()
     available_dbs = [row[0] for row in result]
-    print(f"Available databases: {available_dbs}")
     assert expected_dbs in available_dbs
     cur.close()
 
-def test_insert_and_query(db1_connect):
-    """ Test inserting and querying data in a temporary table """
-    cur = db1_connect.cursor()
-    cur.execute("CREATE TEMP TABLE items (id SERIAL PRIMARY KEY, value TEXT, created_at TIMESTAMPTZ DEFAULT NOW())")
-    data = [f"item_{i}" for i in range(10)]
-    for val in data:
-        cur.execute("INSERT INTO items (value) VALUES (%s)", (val,))
-    cur.execute("SELECT value FROM items ORDER BY id")
-    results = [row[0] for row in cur.fetchall()]
-    print(f"Retrieved values: {results}")
-    assert results == data
+def test_postgis_crud_roundtrip(phenobase):
+    """C=Create, R=Read, U=Update, D=Delete — full round-trip with geometry."""
+    cur = phenobase.cursor()
+
+    # C :Create temp table and insert 3 polygons
+    cur.execute("""
+        CREATE TEMP TABLE test_geom (
+            id   SERIAL,
+            geom GEOMETRY(Polygon, 4326)
+        )
+    """)
+    cur.execute("""
+        INSERT INTO test_geom (geom) VALUES
+            (ST_MakeEnvelope(-10, -10, 10, 10, 4326)),
+            (ST_MakeEnvelope( -5,  -5,  5,  5, 4326)),
+            (ST_MakeEnvelope( -1,  -1,  1,  1, 4326))
+    """)
+
+    # R: Read the inserted polygon and check its (idx,area) 
+    cur.execute("SELECT id, ST_Area(geom) FROM test_geom")
+    rows = cur.fetchall()
+    assert len(rows) == 3
+    assert rows[0] == (1, 400.0)
+    assert rows[1] == (2, 100.0)
+    assert rows[2] == (3,   4.0)
+
+    # U : Update polygon with ID=2
+    cur.execute("""
+        UPDATE test_geom
+        SET geom = ST_MakeEnvelope(-2, -2, 2, 2, 4326)
+        WHERE id = 2
+    """)
+
+    cur.execute("SELECT id, ST_Area(geom) FROM test_geom ORDER BY id")
+    rows = cur.fetchall()
+    assert rows[1] == (2, 16.0)
+
+
+    # R: Read Spatial Relationships
+    # ST_Within(geom, box) is true when geom is fully inside the query box
+    cur.execute("""
+        SELECT id, ST_Within(geom, ST_MakeEnvelope(-6, -6, 6, 6, 4326))
+        FROM test_geom
+        ORDER BY id
+    """)
+    results = cur.fetchall()
+    assert results[0] == (1, False), "id=1 is too large for the box"
+    assert results[1] == (2, True),  "id=2 fits inside"
+    assert results[2] == (3, True),  "id=3 fits inside"
+
+
+    
+    # D : Delete ID=1 and check that only 2 rows remain
+    cur.execute("DELETE FROM test_geom WHERE id = 1")
+    cur.execute("SELECT count(*) FROM test_geom")
+    assert cur.fetchone()[0] == 2
+
     cur.close()
-
-
-
-
-
-
