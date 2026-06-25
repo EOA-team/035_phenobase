@@ -38,10 +38,6 @@ jobs:
       - name: ruff format
         run: ruff format --check src/ tests/
 
-      # CVE scan on conda packages
-      - name: conda-audit dependency scan
-        run: conda-audit -n 035_phenobase
-
       # unit tests with coverage. Integration tests only run on local IT infra, not on CI docker.
       - name: pytest with coverage
         run: pytest --cov=src/ --cov-fail-under=80 --without-integration

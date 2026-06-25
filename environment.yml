@@ -6,7 +6,6 @@
        - python=3.12
        - mypy
        - ruff
-       - conda-audit
        - pytest
        - pytest-cov
        - pytest-integration

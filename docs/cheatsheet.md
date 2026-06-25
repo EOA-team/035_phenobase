@@ -9,24 +9,19 @@ conda env update -f environment.yml --prune   # sync live env to spec file (remo
 ### Mypy
 
 ```bash
-mypy src/                              # Static type checking
+mypy .              # Static type checking
 ```
 
 ### Ruff
 
 ```bash
-ruff check src/ tests/                 # Show linting errors (lint + complexity + security)
-ruff check --diff src/ tests/          # Preview what --fix would change
-ruff check --fix src/ tests/           # Auto-fix what it can
-ruff format --check src/ tests/        # Check formatting, show what would change
-ruff format --diff src/ tests/         # Preview formatting diff
-ruff format src/ tests/                # Auto-format
-```
+ruff check          # Show linting errors (lint + complexity + security)
+ruff check --diff   # Preview what --fix would change
+ruff check --fix    # Auto-fix what it can
 
-### Conda-audit
-
-```bash
-conda-audit -n 035_phenobase           # Scan conda env for known CVEs
+ruff format         # Auto-format
+ruff format --check # Check formatting, show what would change
+ruff format --diff  # Preview formatting diff
 ```
 
 ### Pytest
