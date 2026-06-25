@@ -1,12 +1,14 @@
-""" Tests to verify that the PostgreSQL database with PostGIS Extension
- is accessible and functioning correctly.
+"""Tests to verify that the PostgreSQL database with PostGIS Extension
+is accessible and functioning correctly.
 """
 
 import pytest
 from dotenv import load_dotenv
+
 from src.postgresql_helper import connect_to_database
 
 load_dotenv()  # Load environment variables from .env file
+
 
 @pytest.fixture(name="phenobase")
 def phenobase_conn():
@@ -15,47 +17,53 @@ def phenobase_conn():
     yield conn
     conn.close()
 
+
 @pytest.mark.integration_test
 @pytest.mark.parametrize("version", ["PostgreSQL 16.14"])
 def test_postgres_version(phenobase, version):
-    """ Check expected PostgreSQL version is installed on the server """
+    """Check expected PostgreSQL version is installed on the server"""
     cur = phenobase.cursor()
     cur.execute("SELECT version();")
     result = cur.fetchone()[0]
     cur.close()
     assert version in result
 
+
 @pytest.mark.integration_test
 @pytest.mark.parametrize("expected_ext", ["postgis", "plpgsql"])
 def test_available_extensions(phenobase, expected_ext):
-    """ Check that expected extensions are available on the Database"""
+    """Check that expected extensions are available on the Database"""
     cur = phenobase.cursor()
     cur.execute(
-        "SELECT name, default_version, comment FROM pg_available_extensions ORDER BY name")
+        "SELECT name, default_version, comment FROM pg_available_extensions ORDER BY name"
+    )
     available_ext = [row[0] for row in cur.fetchall()]
     cur.close()
     assert expected_ext in available_ext
 
+
 @pytest.mark.integration_test
 @pytest.mark.parametrize("version", ["3.4"])
 def test_postgis_version(phenobase, version):
-    """ Check that PostGIS extension is installed and has the expected version"""
+    """Check that PostGIS extension is installed and has the expected version"""
     cur = phenobase.cursor()
     cur.execute("SELECT PostGIS_Version();")
     result = cur.fetchone()[0]
     assert version in result
     cur.close()
 
+
 @pytest.mark.integration_test
 @pytest.mark.parametrize("expected_dbs", ["phenobase"])
 def test_available_databases(phenobase, expected_dbs):
-    """ Check that expected databases are available on the PostgreSQL server """
+    """Check that expected databases are available on the PostgreSQL server"""
     cur = phenobase.cursor()
     cur.execute("SELECT datname FROM pg_database;")
     result = cur.fetchall()
     available_dbs = [row[0] for row in result]
     assert expected_dbs in available_dbs
     cur.close()
+
 
 @pytest.mark.integration_test
 def test_postgis_crud(phenobase):
@@ -82,7 +90,7 @@ def test_postgis_crud(phenobase):
     assert len(rows) == 3
     assert rows[0] == (1, 400.0)
     assert rows[1] == (2, 100.0)
-    assert rows[2] == (3,   4.0)
+    assert rows[2] == (3, 4.0)
 
     # U : Update polygon with ID=2
     cur.execute("""
@@ -104,8 +112,8 @@ def test_postgis_crud(phenobase):
     """)
     results = cur.fetchall()
     assert results[0] == (1, False), "id=1 is too large for the box"
-    assert results[1] == (2, True),  "id=2 fits inside"
-    assert results[2] == (3, True),  "id=3 fits inside"
+    assert results[1] == (2, True), "id=2 fits inside"
+    assert results[2] == (3, True), "id=3 fits inside"
 
     # D : Delete ID=1 and check that only 2 rows remain
     cur.execute("DELETE FROM test_geom WHERE id = 1")
