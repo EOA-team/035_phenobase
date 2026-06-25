@@ -1,18 +1,21 @@
-     name: 035_phenobase
-     channels:
-       - conda-forge
-       - defaults
-     dependencies:
-       - python=3.12
-       - mypy
-       - ruff
-       - pytest
-       - pytest-cov
-       - pytest-integration
-       - pip
-       - python-dotenv
-       - psycopg2
-       - types-psycopg2
-       - sqlalchemy
-       - pip:
-         # pip-only packages go here if needed
+name: 035_phenobase
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - mypy
+  - ruff
+  - pytest
+  - pytest-cov
+  - pytest-integration
+  - pip
+  - python-dotenv
+  - psycopg2
+  - sqlalchemy
+  - types-psycopg2
+  - fastapi
+  - uvicorn
+  - httpx
+  - pip:
+    - # pip-only packages go here if needed
