@@ -4,6 +4,7 @@
 
 import pytest
 from dotenv import load_dotenv
+from psycopg2 import OperationalError
 from src.postgresql_helper import connect_to_database
 
 load_dotenv()  # Load environment variables from .env file
@@ -12,7 +13,10 @@ load_dotenv()  # Load environment variables from .env file
 @pytest.fixture(name="phenobase")
 def phenobase_conn():
     """PostgreSQL connection to database with the name phenobase"""
-    conn = connect_to_database(dbname="phenobase")
+    try:
+        conn = connect_to_database(dbname="phenobase")
+    except OperationalError:
+        pytest.skip("PostgreSQL/PostGIS server not available")
     yield conn
     conn.close()
 
