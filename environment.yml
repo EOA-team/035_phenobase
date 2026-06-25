@@ -17,5 +17,5 @@ dependencies:
   - fastapi
   - uvicorn
   - httpx
-  - pip:
-    - # pip-only packages go here if needed
+  - pip: 
+  # pip-only packages go here if needed
