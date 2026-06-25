@@ -1,0 +1,33 @@
+# Ruff configuration for 035_phenobase.
+# Replaces pylint, bandit, autopep8, radon, isort.
+#
+# Rule sets used:
+#   I     import sorting
+#         example: `import os` before `from os import path`
+#   N     naming conventions
+#         example: `def MyFunc():` → should be `def my_func():`
+#   UP    modern Python syntax
+#         example: `"hello {}".format(name)` → `f"hello {name}"`
+#   PL    pylint parity (logic, unused vars, etc.)
+#         example: unused variable `x = 1` that is never read
+#   S     security (hardcoded secrets, injections)
+#         example: `password = "supersecret"` hardcoded in source
+#   B     bugbear (mutable defaults, bare except, etc.)
+#         example: `def f(x=[]):` — list shared across all calls
+#   C90   McCabe complexity
+#         example: function with 12 if/elif/for/while branches
+#   RUF   Ruff helpers (stale noqa, etc.)
+#         example: `# noqa: F401` left on a line that no longer needs it
+
+target-version = "py312"
+
+[lint]
+extend-select = ["I", "N", "UP", "PL", "S", "B", "C90", "RUF"]
+
+[lint.mccabe]
+# McCabe = 1 + branching points.
+# Each if, elif, for, while, except, with, match case,
+#   and, or adds 1 branching point.
+# 10 = industry standard threshold (max 9 branches).
+# >10 means "needs refactoring."
+max-complexity = 10

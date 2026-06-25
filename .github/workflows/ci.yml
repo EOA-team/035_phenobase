@@ -15,8 +15,10 @@ jobs:
         shell: bash -l {0}   # ensures conda is activated for all steps
 
     steps:
+      # checkout repo
       - uses: actions/checkout@v4
 
+      # create + cache conda env
       - uses: conda-incubator/setup-miniconda@v3
         with:
           environment-file: environment.yml
@@ -24,11 +26,22 @@ jobs:
           cache-environment: true
           cache-environment-key: ${{ runner.os }}-${{ hashFiles('environment.yml') }}
 
+      # static type checking
       - name: mypy
         run: mypy src/
 
-      - name: pylint
-        run: pylint $(git ls-files '*.py') --fail-under=8.0
+      # lint + complexity + security (replaces pylint, bandit, radon cc)
+      - name: ruff check
+        run: ruff check src/ tests/
 
+      # formatting check (replaces autopep8)
+      - name: ruff format
+        run: ruff format --check src/ tests/
+
+      # CVE scan on conda packages
+      - name: conda-audit dependency scan
+        run: conda-audit -n 035_phenobase
+
+      # unit tests with coverage. Integration tests only run on local IT infra, not on CI docker.
       - name: pytest with coverage
         run: pytest --cov=src/ --cov-fail-under=80 --without-integration

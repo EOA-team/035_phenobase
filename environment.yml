@@ -4,9 +4,9 @@
        - defaults
      dependencies:
        - python=3.12
-       - autopep8
        - mypy
-       - pylint
+       - ruff
+       - conda-audit
        - pytest
        - pytest-cov
        - pytest-integration
