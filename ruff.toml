@@ -24,6 +24,9 @@ target-version = "py312"
 [lint]
 extend-select = ["I", "N", "UP", "PL", "S", "B", "C90", "RUF"]
 
+[lint.per-file-ignores]
+"tests/*" = ["S101"]                    # allow assert in test files
+
 [lint.mccabe]
 # McCabe = 1 + branching points.
 # Each if, elif, for, while, except, with, match case,
