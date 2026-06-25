@@ -31,4 +31,4 @@ jobs:
         run: pylint $(git ls-files '*.py') --fail-under=8.0
 
       - name: pytest with coverage
-        run: pytest --cov=. --cov-fail-under=80 --without-integration
+        run: pytest --cov=src/ --cov-fail-under=80 --without-integration

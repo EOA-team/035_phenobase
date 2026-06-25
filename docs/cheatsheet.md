@@ -13,3 +13,10 @@ autopep8 --in-place file.py  # Apply directly on file
 autopep8 --diff file.py      # Check what would change first  
 
 ```
+
+### Pytest
+
+```bash
+pytest --cov=src/ --cov-fail-under=80 # Check coverage
+pytest -s -v # Run all Tests 
+```
