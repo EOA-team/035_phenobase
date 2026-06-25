@@ -1,6 +1,6 @@
 """PostgreSQL helper functions currently support:
 - create new database
-- install PostGIS extension"""   
+- install PostGIS extension"""
 
 import os
 import psycopg2
@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Load environment variables from .env file
 
-def connect_to_database(dbname:str = "db1") -> connection:
+
+def connect_to_database(dbname: str = "db1") -> connection:
     """Connect to a PostgreSQL database ,
     By Default connects to "db1" which is a test database provided by IT"""
     conn = psycopg2.connect(
@@ -18,19 +19,19 @@ def connect_to_database(dbname:str = "db1") -> connection:
         password=os.getenv("DB_PASSWORD"),
         host=os.getenv("DB_HOST"),
         port=os.getenv("DB_PORT")
-        )
+    )
     return conn
 
 
-def create_database(dbname:str):
+def create_database(dbname: str):
     """Create database if it doesn't exist. 
     Returns True if created, False if already existed."""
-    #Connecto to existing db1 as starting point for creating new database
-    conn =connect_to_database(dbname="db1")
+    # Connecto to existing db1 as starting point for creating new database
+    conn = connect_to_database(dbname="db1")
     # Enable autocommit mode for database creation
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)  
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor()
-    #Chek if database already exists
+    # Chek if database already exists
     cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (dbname,))
     exists = cur.fetchone() is not None
     if not exists:
@@ -44,7 +45,8 @@ def create_database(dbname:str):
     conn.close()
     return False
 
-def install_extension(target_db:str, extension:str):
+
+def install_extension(target_db: str, extension: str):
     """Installs the specified extension in the target database
     Returns True if installed, False if already exists."""
     conn = connect_to_database(target_db)

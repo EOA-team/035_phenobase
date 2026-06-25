@@ -1,5 +1,6 @@
-""" Tests to verify that the PostgreSQL database is accessible and functioning correctly.
-These tests check the database version, available databases, PostGIS extension, and basic insert/query operations"""
+""" Tests to verify that the PostgreSQL database with PostGIS Extension
+ is accessible and functioning correctly.
+"""
 
 import pytest
 from dotenv import load_dotenv
@@ -7,12 +8,14 @@ from src.postgresql_helper import connect_to_database
 
 load_dotenv()  # Load environment variables from .env file
 
-@pytest.fixture
-def phenobase():
+
+@pytest.fixture(name="phenobase")
+def phenobase_conn():
     """PostgreSQL connection to database with the name phenobase"""
     conn = connect_to_database(dbname="phenobase")
     yield conn
     conn.close()
+
 
 @pytest.mark.parametrize("version", ["PostgreSQL 16.14"])
 def test_postgres_version(phenobase, version):
@@ -22,16 +25,18 @@ def test_postgres_version(phenobase, version):
     result = cur.fetchone()[0]
     cur.close()
     assert version in result
-    
+
 
 @pytest.mark.parametrize("expected_ext", ["postgis", "plpgsql"])
 def test_available_extensions(phenobase, expected_ext):
     """ Check that expected extensions are available on the Database"""
     cur = phenobase.cursor()
-    cur.execute("SELECT name, default_version, comment FROM pg_available_extensions ORDER BY name")
+    cur.execute(
+        "SELECT name, default_version, comment FROM pg_available_extensions ORDER BY name")
     available_ext = [row[0] for row in cur.fetchall()]
     cur.close()
-    assert expected_ext in available_ext 
+    assert expected_ext in available_ext
+
 
 @pytest.mark.parametrize("version", ["3.4"])
 def test_postgis_version(phenobase, version):
@@ -42,6 +47,7 @@ def test_postgis_version(phenobase, version):
     assert version in result
     cur.close()
 
+
 @pytest.mark.parametrize("expected_dbs", ["phenobase"])
 def test_available_databases(phenobase, expected_dbs):
     """ Check that expected databases are available on the PostgreSQL server """
@@ -51,6 +57,7 @@ def test_available_databases(phenobase, expected_dbs):
     available_dbs = [row[0] for row in result]
     assert expected_dbs in available_dbs
     cur.close()
+
 
 def test_postgis_crud(phenobase):
     """C=Create, R=Read, U=Update, D=Delete — full crud with geometry."""
@@ -70,7 +77,7 @@ def test_postgis_crud(phenobase):
             (ST_MakeEnvelope( -1,  -1,  1,  1, 4326))
     """)
 
-    # R: Read the inserted polygon and check its (idx,area) 
+    # R: Read the inserted polygon and check its (idx,area)
     cur.execute("SELECT id, ST_Area(geom) FROM test_geom")
     rows = cur.fetchall()
     assert len(rows) == 3
@@ -89,7 +96,6 @@ def test_postgis_crud(phenobase):
     rows = cur.fetchall()
     assert rows[1] == (2, 16.0)
 
-
     # R: Read Spatial Relationships
     # ST_Within(geom, box) is true when geom is fully inside the query box
     cur.execute("""
@@ -102,8 +108,6 @@ def test_postgis_crud(phenobase):
     assert results[1] == (2, True),  "id=2 fits inside"
     assert results[2] == (3, True),  "id=3 fits inside"
 
-
-    
     # D : Delete ID=1 and check that only 2 rows remain
     cur.execute("DELETE FROM test_geom WHERE id = 1")
     cur.execute("SELECT count(*) FROM test_geom")
