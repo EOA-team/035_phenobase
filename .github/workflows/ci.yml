@@ -16,15 +16,13 @@ jobs:
 
     steps:
       # checkout repo
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      # create + cache conda env
-      - uses: conda-incubator/setup-miniconda@v3
+      # create conda env from environment.yml
+      - uses: conda-incubator/setup-miniconda@v4
         with:
           environment-file: environment.yml
-          auto-activate-base: false
-          cache-environment: true
-          cache-environment-key: ${{ runner.os }}-${{ hashFiles('environment.yml') }}
+          auto-activate: false
 
       # static type checking
       - name: mypy
