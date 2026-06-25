@@ -4,7 +4,6 @@
 
 import pytest
 from dotenv import load_dotenv
-from psycopg2 import OperationalError
 from src.postgresql_helper import connect_to_database
 
 load_dotenv()  # Load environment variables from .env file
@@ -16,7 +15,7 @@ def phenobase_conn():
     yield conn
     conn.close()
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 @pytest.mark.parametrize("version", ["PostgreSQL 16.14"])
 def test_postgres_version(phenobase, version):
     """ Check expected PostgreSQL version is installed on the server """
@@ -26,7 +25,7 @@ def test_postgres_version(phenobase, version):
     cur.close()
     assert version in result
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 @pytest.mark.parametrize("expected_ext", ["postgis", "plpgsql"])
 def test_available_extensions(phenobase, expected_ext):
     """ Check that expected extensions are available on the Database"""
@@ -37,7 +36,7 @@ def test_available_extensions(phenobase, expected_ext):
     cur.close()
     assert expected_ext in available_ext
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 @pytest.mark.parametrize("version", ["3.4"])
 def test_postgis_version(phenobase, version):
     """ Check that PostGIS extension is installed and has the expected version"""
@@ -47,7 +46,7 @@ def test_postgis_version(phenobase, version):
     assert version in result
     cur.close()
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 @pytest.mark.parametrize("expected_dbs", ["phenobase"])
 def test_available_databases(phenobase, expected_dbs):
     """ Check that expected databases are available on the PostgreSQL server """
@@ -58,7 +57,7 @@ def test_available_databases(phenobase, expected_dbs):
     assert expected_dbs in available_dbs
     cur.close()
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_postgis_crud(phenobase):
     """C=Create, R=Read, U=Update, D=Delete — full crud with geometry."""
     cur = phenobase.cursor()
