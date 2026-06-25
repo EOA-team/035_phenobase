@@ -4,11 +4,15 @@
        - defaults
      dependencies:
        - python=3.12
-       - autopep8
        - mypy
-       - pylint
+       - ruff
        - pytest
        - pytest-cov
+       - pytest-integration
        - pip
+       - python-dotenv
+       - psycopg2
+       - types-psycopg2
+       - sqlalchemy
        - pip:
          # pip-only packages go here if needed
