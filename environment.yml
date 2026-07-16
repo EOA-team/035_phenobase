@@ -17,5 +17,6 @@ dependencies:
   - fastapi
   - uvicorn
   - httpx
+  - mlflow
   - pip: 
   # pip-only packages go here if needed

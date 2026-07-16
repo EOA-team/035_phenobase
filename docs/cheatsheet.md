@@ -38,6 +38,10 @@ pytest -s -v                           # Run all tests
 ```
 ### uvicorn 
 ```bash
-& "C:\Traefik\traefik.exe" --configFile="C:\Traefik\traefik.yml"  
 uvicorn src.api:app --host localhost --port 8000
+```
+
+### mlflow 
+```bash
+mlflow server --host localhost --port 5000 --allowed-hosts "mlflow.phenobase.agsad.admin.ch" 
 ```
