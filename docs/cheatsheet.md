@@ -30,3 +30,14 @@ ruff format --diff  # Preview formatting diff
 pytest --cov=src/ --cov-fail-under=80  # Check coverage
 pytest -s -v                           # Run all tests 
 ```
+
+### start traefik(powershell)
+
+```bash
+& "C:\Traefik\traefik.exe" --configFile="C:\Traefik\traefik.yml"  
+```
+### uvicorn 
+```bash
+& "C:\Traefik\traefik.exe" --configFile="C:\Traefik\traefik.yml"  
+uvicorn src.api:app --host localhost --port 8000
+```
