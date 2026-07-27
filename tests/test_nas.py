@@ -1,105 +1,84 @@
 import os
-import smbclient
+from smbclient import (
+    register_session, 
+    listdir, open_file, 
+    path,
+    unlink,
+    reset_connection_cache
+)
 import pytest
 import time
 
-from src.nas import register_nas_host, build_unc_path
-
-@pytest.mark.parametrize("host", ["mirror", "origin"])
-@pytest.mark.parametrize("user", ["normal", "service"])
-def test_show_nas_config(host, user, nas_config):
-    """Run with pytest -s to inspect"""
-    smbclient.reset_connection_cache()
-    register_nas_host(nas_config, host, user)
-    print(build_unc_path(nas_config, host))
+from src.smbfile_utils import build_unc_path, write_random_binary_file
+from pathlib import Path
 
 
-@pytest.mark.parametrize("host", ["mirror", "origin"])
-@pytest.mark.parametrize("user", ["normal", "service"])
-def test_read_access(host, user, nas_config):
-    """ Test read access by checking the contents of the configured UNC path are not empty """
+@pytest.fixture(scope="function")
+def service_session():
+    """Register a service user session for NAS access"""
+    reset_connection_cache()
+    user = os.environ["SERVICE_USER"]
+    register_session(
+        server=os.environ["NAS_RECKENHOLZ"],
+        username=user,
+        password=os.environ["SERVICE_PASSWORD"],
+    )
+    yield user
+    reset_connection_cache()
 
-    print("Testing read access...")
-    print(f"Host: {nas_config['hosts'][host]}")
-    print(f"User: {nas_config['users'][user]['username']}")
+@pytest.fixture(scope="function")
+def normal_session():
+    """Register a normal user (F-Account) session for NAS access"""
+    reset_connection_cache()
+    user = os.environ["NORMAL_USER"]
+    register_session(
+        server=os.environ["NAS_RECKENHOLZ"],
+        username=user,
+        password=os.environ["NORMAL_PASSWORD"],
+    )
+    yield user
+    reset_connection_cache()
 
-    smbclient.reset_connection_cache()
+@pytest.fixture(scope="module")
+def target_path():
+    """Build the UNC path for drone nas folder"""
+    return build_unc_path(
+        hostname=os.environ["NAS_RECKENHOLZ"],
+        share="Data-EODrone",
+        folder="drone",
+    )
 
-    register_nas_host(nas_config, host, user)
-    path = build_unc_path(nas_config, host)
-    entries = smbclient.listdir(path)
-    print(f"Found {len(entries)} entries : {entries}")
+def test_normal_user_read_access(normal_session, target_path):
+    """ Test read access by listing the contents of the NAS folder """
+    print(f"Reading as {normal_session}")
+    entries = listdir(target_path)  
     assert len(entries) > 0
 
+def test_service_user_read_access(service_session, target_path):
+    """ Test read access by listing the contents of the NAS folder """
+    print(f"Reading as {service_session}")
+    entries = listdir(target_path)  
+    assert len(entries) > 0
 
-@pytest.mark.parametrize(
-    "host,user,should_succeed", 
-    [
-         ("mirror", "service", True),       
-         ("mirror", "normal", False), 
-         ("origin", "normal", False),
-         ("origin", "service", True), 
-     ]) 
-def test_write_access(host, user, should_succeed, nas_config):
-    """ Test write access by attempting to create and delete a test file """
-    smbclient.reset_connection_cache()
-    register_nas_host(nas_config, host, user)
-    path = build_unc_path(nas_config, host)
-    filepath = rf"{path}\write_test_{os.urandom(4).hex()}.txt"
-    if should_succeed:
-        with smbclient.open_file(filepath, "w") as f:
-            f.write("test")
-        assert smbclient.path.exists(filepath)
-        smbclient.unlink(filepath)
-    else:
-        with pytest.raises(OSError):
-            with smbclient.open_file(filepath, "w") as f:
-                f.write("test")
-
-# @pytest.mark.parametrize(
-#     "source,target", 
-#     [
-#         ("mirror", "origin"),
-#         ("origin", "mirror"),
-#     ])
-
-# def test_replication_latency(source, target, nas_config, max_latency_ns: int = 10000):
-#     """ Test replication latency by creating a file on the source 
-#     and waiting for it to appear on the target """
-
-#     filename = f"repl_{os.urandom(4).hex()}.txt"
-#     content = "test"
-
-#     source_path = build_unc_path(nas_config, source) + rf"\{filename}"
-#     target_path = build_unc_path(nas_config, target) + rf"\{filename}"
-
-#     # Register source and target 
-#     smbclient.reset_connection_cache()
-#     register_nas_host(nas_config, source, "service") 
-#     register_nas_host(nas_config, target, "service")
-
-#     #Write test file to source
-#     with smbclient.open_file(source_path, "w") as f:
-#         f.write(content)
-#         f.flush()  # Ensure content is written to disk before measuring latency
-
-#     #Start Time and wait for file to appear on target
+def test_normal_write_access(normal_session, target_path):
+    """ Test that a normal user cannot write to the NAS folder """
+    print(f"Writing as {normal_session}")
+    filepath = Path(target_path) / f"write_test_{os.urandom(4).hex()}.txt"
     
-#     start = time.perf_counter_ns()
+    with pytest.raises(OSError), open_file(filepath, "w") as f:
+        f.write("test")
 
-#     while True:
-#         elapsed_ns = time.perf_counter_ns() - start
-#         if elapsed_ns > max_latency_ns:
-#             print(f"\n  {source} -> {target}: not found within {max_latency_ns}ns")
-#             break
-#         if smbclient.path.exists(target_path):
-#             with smbclient.open_file(target_path, "r") as f:
-#                 assert f.read() == content
-#             print(f"\n  {source} -> {target}: {elapsed_ns}ns")
-#             break
+def test_service_write_access(service_session, target_path):
+    """ Test that service user can write to the NAS folder """
+    print(f"Writing as {service_session}")
+    filename= os.urandom(4).hex()
+    filepath = Path(target_path) / f"write_test_{filename}.bin"
+    _ ,file_content = write_random_binary_file(filepath, size=128)
 
-#         time.sleep(0.01) 
-#     #Delete test file from source and target
-#     smbclient.unlink(source_path)
+    assert path.exists(filepath) 
+    with open_file(filepath, "rb") as f:
+        assert f.read() == file_content
+    
+    #unlink(filepath)  # Clean up after test
 
-   
+
