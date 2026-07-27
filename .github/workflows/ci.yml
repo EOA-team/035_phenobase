@@ -15,20 +15,27 @@ jobs:
         shell: bash -l {0}   # ensures conda is activated for all steps
 
     steps:
-      - uses: actions/checkout@v4
+      # checkout repo
+      - uses: actions/checkout@v5
 
-      - uses: conda-incubator/setup-miniconda@v3
+      # create conda env from environment.yml
+      - uses: conda-incubator/setup-miniconda@v4
         with:
           environment-file: environment.yml
-          auto-activate-base: false
-          cache-environment: true
-          cache-environment-key: ${{ runner.os }}-${{ hashFiles('environment.yml') }}
+          auto-activate: false
 
+      # static type checking
       - name: mypy
-        run: mypy src/
+        run: mypy .
 
-      - name: pylint
-        run: pylint $(git ls-files '*.py') --fail-under=8.0
+      # lint + complexity + security (replaces pylint, bandit, radon cc)
+      - name: ruff check
+        run: ruff check 
 
+      # formatting check (replaces autopep8)
+      - name: ruff format
+        run: ruff format --check 
+
+      # unit tests with coverage. Integration tests only run on local IT infra, not on CI docker.
       - name: pytest with coverage
-        run: pytest --cov=. --cov-fail-under=80
+        run: pytest --cov=src/ --cov-fail-under=80 --without-integration
