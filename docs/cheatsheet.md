@@ -30,3 +30,18 @@ ruff format --diff  # Preview formatting diff
 pytest --cov=src/ --cov-fail-under=80  # Check coverage
 pytest -s -v                           # Run all tests 
 ```
+
+### start traefik(powershell)
+
+```bash
+& "C:\Traefik\traefik.exe" --configFile="C:\Traefik\traefik.yml"  
+```
+### uvicorn 
+```bash
+uvicorn src.scripts.api_dummy:app --host localhost --port 8000
+```
+
+### mlflow 
+```bash
+mlflow server --host localhost --port 5000 --allowed-hosts "mlflow.phenobase.agsad.admin.ch" 
+```
