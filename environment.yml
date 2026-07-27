@@ -18,5 +18,7 @@ dependencies:
   - uvicorn
   - httpx
   - mlflow
+  - paramiko
+  - types-paramiko
   - pip: 
   # pip-only packages go here if needed
