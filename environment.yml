@@ -20,23 +20,6 @@ dependencies:
   - mlflow
   - paramiko
   - types-paramiko
+  - smbprotocol
   - pip: 
   # pip-only packages go here if needed
-
-     name: 035_phenobase
-     channels:
-       - conda-forge
-       - defaults
-     dependencies:
-       - python=3.12
-       - autopep8
-       - mypy
-       - pylint
-       - pytest
-       - pytest-cov
-       - python-dotenv
-       - smbprotocol
-       - pip
-       - pip:
-         # pip-only packages go here if needed
-         
