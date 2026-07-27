@@ -10,7 +10,7 @@ from src.postgresql_helper import connect_to_database
 load_dotenv()  # Load environment variables from .env file
 
 
-@pytest.fixture(name="phenobase",scope="function")
+@pytest.fixture(name="phenobase", scope="function")
 def phenobase_conn():
     """PostgreSQL connection to database with the name phenobase"""
     conn = connect_to_database(dbname="phenobase")
