@@ -79,6 +79,6 @@ def test_service_write_access(service_session, target_path):
     with open_file(filepath, "rb") as f:
         assert f.read() == file_content
     
-    #unlink(filepath)  # Clean up after test
+    unlink(filepath)  # Clean up after test
 
 
