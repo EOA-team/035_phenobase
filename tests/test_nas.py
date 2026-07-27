@@ -4,12 +4,17 @@ from smbclient import (
     listdir, open_file, 
     path,
     unlink,
-    reset_connection_cache
+    reset_connection_cache,
 )
 import pytest
 import time
 
-from src.smbfile_utils import build_unc_path, write_random_binary_file
+from src.smbfile_utils import (
+    build_unc_path, 
+    write_random_binary_file, 
+    get_sha256sum,
+    FileSizeUnit,
+)
 from pathlib import Path
 
 
@@ -73,11 +78,13 @@ def test_service_write_access(service_session, target_path):
     print(f"Writing as {service_session}")
     filename= os.urandom(4).hex()
     filepath = Path(target_path) / f"write_test_{filename}.bin"
-    _ ,file_content = write_random_binary_file(filepath, size=128)
+    expected_hash = write_random_binary_file(
+        filepath, 
+        size= 100* FileSizeUnit.MB,
+        chunk_size=FileSizeUnit.MB)
 
     assert path.exists(filepath) 
-    with open_file(filepath, "rb") as f:
-        assert f.read() == file_content
+    assert get_sha256sum(filepath) == expected_hash
     
     unlink(filepath)  # Clean up after test
 
