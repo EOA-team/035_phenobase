@@ -1,4 +1,6 @@
 import os
+import time 
+
 from smbclient import (
     register_session, 
     listdir, open_file, 
@@ -16,6 +18,10 @@ from src.smbfile_utils import (
     FileSizeUnit,
 )
 from pathlib import Path
+from paramiko import SSHClient
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 @pytest.fixture(scope="function")
@@ -76,11 +82,11 @@ def test_normal_write_access(normal_session, target_path):
 def test_service_write_access(service_session, target_path):
     """ Test that service user can write to the NAS folder """
     print(f"Writing as {service_session}")
-    filename= os.urandom(4).hex()
-    filepath = Path(target_path) / f"write_test_{filename}.bin"
+    filename= f"write_test_{os.urandom(4).hex()}.bin"
+    filepath = Path(target_path) / filename
     expected_hash = write_random_binary_file(
         filepath, 
-        size= 100* FileSizeUnit.MB,
+        size= 10* FileSizeUnit.MB,
         chunk_size=FileSizeUnit.MB)
 
     assert path.exists(filepath) 
@@ -88,4 +94,44 @@ def test_service_write_access(service_session, target_path):
     
     unlink(filepath)  # Clean up after test
 
+def test_nas_to_flexcache(service_session, target_path, timeout_s=600, size_gb=10):
+    """Test how long it takes to until a 10GB file created on NAS is present
+    in FlexCache"""
+    print(f"Writing as {service_session}")
+    filename= f"flexcache_test_{os.urandom(4).hex()}.bin"
+    filepath = Path(target_path) / filename
+    start_time = time.time()
+    expected_hash = write_random_binary_file(
+        filepath, 
+        size= size_gb* FileSizeUnit.GB,   #Orthomosaic ~5GB
+        chunk_size=FileSizeUnit.MB)
+    write_duration = time.time()-start_time
+
+    client = SSHClient()
+    client.load_host_keys(filename=str(Path.home() / ".ssh" / "known_hosts"))
+    client.connect(
+        hostname=os.getenv("SSH_HOST"),
+        username=os.getenv("SSH_USER"),
+        password=os.getenv("SSH_PASSWORD"),
+    )
+
+    start_poll = time.time()
+    remote_hash = None
+    while time.time() - start_poll < timeout_s:
+        _ , stdout, _ = client.exec_command(f"sha256sum /agroscope/EO_drone/drone/{filename}")
+        output = stdout.read().decode().strip()
+        if output:
+            remote_hash = output.split()[0]
+            if remote_hash == expected_hash:
+                end_poll = time.time()
+                break
+            time.sleep(5)  # Wait for 5 seconds before checking again
+
+    assert remote_hash == expected_hash, (
+        f"Expected hash {expected_hash}, but got {remote_hash}. "
+    )   
+    print(f"Write duration: {write_duration:.2f} seconds")
+    print(f"Latency for file to appear on FlexCache: {end_poll - start_poll:.2f} seconds")
+    print(f"Total time from write to hash match: {end_poll - start_time:.2f} seconds")
+    client.close()
 
