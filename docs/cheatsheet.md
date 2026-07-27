@@ -38,7 +38,7 @@ pytest -s -v                           # Run all tests
 ```
 ### uvicorn 
 ```bash
-uvicorn src.api:app --host localhost --port 8000
+uvicorn src.scripts.api_dummy:app --host localhost --port 8000
 ```
 
 ### mlflow 
