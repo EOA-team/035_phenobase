@@ -1,3 +1,23 @@
+"""
+This test checks that the NAS is accessible and functioning as expected
+
+Data-EO_drone is stored on NAS and contains big files that cannot be saved in
+the PostgreSQL DB. This are files like orthomosaics or model artifacts.
+
+This data needs to be accessible on:
+- Gamarello Cluster: for inference (new crop traits), 
+Accessible via Flexcache (mounted on /agroscope/EO_drone)
+- Drone Station (NAS) :  for extraction of statistical features
+Accessible via SMB/CIFS 
+
+Additionally the NAS only allows write access for a service user, 
+while normal users can only read the data.
+
+
+Relevant issues:
+https://github.com/EOA-team/035_phenobase/issues/3
+"""
+
 import os
 import time 
 
