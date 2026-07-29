@@ -40,7 +40,13 @@ def get_sha256sum(filepath, chunk_size=DEFAULT_CHUNK_SIZE):
                  sha.update(chunk)
          return sha.hexdigest()
 
-
+def get_sha256sum_last_chunk(filepath, chunk_size=DEFAULT_CHUNK_SIZE):
+         """ Calculate the SHA256 checksum of the last chunk of a file """
+         sha = hashlib.sha256()
+         with open_file(str(filepath), "rb") as f:
+             f.seek(-chunk_size, os.SEEK_END)
+             sha.update(f.read(chunk_size))
+         return sha.hexdigest()
 
  
 
