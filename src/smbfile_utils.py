@@ -23,7 +23,8 @@ def write_random_binary_file(
         size : int , 
         chunk_size: int = DEFAULT_CHUNK_SIZE) -> tuple[str, str]:
     """ Write a random binary file of specified size
-     and return the SHA256 checksum of the entire file and the last chunk."""
+     return tuple of (full file sha256, last chunk sha256)
+     """
     sha = hashlib.sha256()
     last_chunk_sha = hashlib.sha256()
     with open_file(filepath, "wb") as f:

@@ -1,4 +1,4 @@
-from src.smbfile_utils import build_unc_path, write_random_binary_file, get_sha256sum, get_sha256sum_last_chunk ,FileSizeUnit
+from src.smbfile_utils import build_unc_path, write_random_binary_file, get_sha256sum, get_sha256sum_last_chunk ,FileSizeUnit, DEFAULT_CHUNK_SIZE
 import src.smbfile_utils 
 import pytest
 
@@ -23,7 +23,7 @@ def test_smb_file_write_and_read_checksum( tmp_path):
     """Tests the full write-then-read lifecycle of the SMB utility functions."""
     test_file = tmp_path / "test.bin"
     write_hash, write_hash_last_chunk = write_random_binary_file(test_file, size=FILESIZE)
-    read_hash_last_chunk = get_sha256sum_last_chunk(test_file)
+    read_hash_last_chunk = get_sha256sum_last_chunk(filepath=test_file, chunk_size=DEFAULT_CHUNK_SIZE)
     read_hash = get_sha256sum(test_file)
 
     assert write_hash_last_chunk == read_hash_last_chunk, (
