@@ -16,9 +16,9 @@ def ssh():
     client = SSHClient()
     client.load_host_keys(filename=str(Path.home() / ".ssh" / "known_hosts"))
     client.connect(
-        hostname=os.getenv("SSH_HOST"),
-        username=os.getenv("SSH_USER"),
-        password=os.getenv("SSH_PASSWORD"),
+        hostname=os.getenv("GAMARELLO_ADDRESS"),
+        username=os.getenv("SERVICE_USER"),
+        password=os.getenv("SERVICE_PASSWORD"),
     )
     yield client
     client.close()
@@ -35,7 +35,7 @@ def test_expected_ssh_user(ssh):
     """Verify that the SSH connection is using the expected user."""
     _, stdout, _ = ssh.exec_command("whoami")
     remote_user = stdout.read().decode().strip()
-    expected_user = os.getenv("SSH_USER")
+    expected_user = os.getenv("SERVICE_USER")
     print(remote_user)
     assert remote_user == expected_user, (
         f"Expected SSH user {expected_user}, but got {remote_user}"

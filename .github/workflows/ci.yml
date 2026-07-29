@@ -38,4 +38,4 @@ jobs:
 
       # unit tests with coverage. Integration tests only run on local IT infra, not on CI docker.
       - name: pytest with coverage
-        run: pytest --cov=src/ --cov-fail-under=80 --without-integration
+        run: pytest --cov=src/ --cov-fail-under=80 --without-integration --without-slow-integrtion
