@@ -25,7 +25,7 @@ from smbclient import (
     register_session, 
     listdir, open_file, 
     path,
-    unlink,
+    remove,
     reset_connection_cache,
 )
 import pytest
@@ -43,15 +43,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# SETTINGS for LATENCY TESTS
-SIZE_FILE = 10 * FileSizeUnit.GB  #Orthomosaic ~3 - 10GB
-MAX_LATENCY = 600  # seconds
+#Drone Data Location directly on NAS
 NAS_TARGET = build_unc_path(
     hostname=os.environ["NAS_RECKENHOLZ"],
     share="Data-EODrone",
     folder="drone",
 )
+#Drone Data Location on FlexCache (mounted on Gamarello Cluster)
 FLEXCACHE_TARGET = "/agroscope/EO_drone/drone"
+
+# SETTINGS for LATENCY TESTS
+SIZE_FILE = 5 * FileSizeUnit.GB  #Orthomosaic ~3 - 10GB
+MAX_LATENCY = 600  # seconds
+
 
 
 @pytest.fixture(scope="function")
@@ -79,6 +83,19 @@ def normal_session():
     )
     yield user
     reset_connection_cache()
+
+@pytest.mark.integration_test
+def test_normal_user_operations(normal_session):
+    """A normal user (F-Account) should be able to:
+    1) read all  NAS data via Flexcache
+    2) copy files  from Flexcache to /scratch ($SCRATCH)
+    3) should not be able to write to flexcache"""
+
+
+
+
+
+
 
 @pytest.mark.integration_test
 def test_normal_user_read_access(normal_session):
@@ -117,7 +134,7 @@ def test_service_write_access(service_session):
     assert path.exists(filepath) 
     assert get_sha256sum(filepath) == expected_hash
     
-    unlink(filepath)  # Clean up after test
+    remove(filepath)  # Clean up after test
 
 @pytest.mark.slow_integration_test
 def test_nas_to_flexcache(service_session, timeout_s=MAX_LATENCY, size_bytes=SIZE_FILE):
@@ -157,6 +174,7 @@ def test_nas_to_flexcache(service_session, timeout_s=MAX_LATENCY, size_bytes=SIZ
     assert remote_hash == expected_hash, (
         f"Expected hash {expected_hash}, but got {remote_hash}. "
     )   
+    remove(nas_filepath)  # Delete the file from NAS after test
     print(f"Write duration: {write_duration:.2f} seconds")
     print(f"Latency for file to appear on FlexCache: {end_poll - start_poll:.2f} seconds")
     print(f"Total time from write to hash match: {end_poll - start_time:.2f} seconds")
@@ -182,7 +200,7 @@ def test_flexcache_to_nas(service_session, timeout_s=MAX_LATENCY, size_bytes=SIZ
 
     # Write a random binary file on FlexCache and get its SHA256 hash
     _, stdout, _ = client.exec_command(
-        f"dd if=/dev/urandom of={flexcach_filepath} bs={size_bytes} count=1 "
+        f"dd if=/dev/urandom of={flexcach_filepath} bs=1M count={size_bytes // (1024*1024)} "
         f"2>/dev/null && sha256sum {flexcach_filepath}"
     )
 
@@ -202,6 +220,7 @@ def test_flexcache_to_nas(service_session, timeout_s=MAX_LATENCY, size_bytes=SIZ
     assert remote_hash == expected_hash, (
         f"Expected hash {expected_hash}, but got {remote_hash}. "
     )
+    remove(nas_filepath)  # Delete the file from NAS after test
     print(f"Write duration: {write_duration:.2f} seconds")
     print(f"Latency for file to appear on NAS: {end_poll - start_poll:.2f} seconds")  
     print(f"Total time from write to hash match: {end_poll - start_time:.2f} seconds")

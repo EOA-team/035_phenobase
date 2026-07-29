@@ -36,7 +36,7 @@ pytest -s -v \
 --without-slow-integration       
 
 pytest --cov=src/ --cov-fail-under=80 \
- --without-slow-integration 
+--without-slow-integration 
 
 # Run only (unit-tests)
 pytest -s -v \
