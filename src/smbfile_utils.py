@@ -20,8 +20,8 @@ def build_unc_path(hostname, share, folder):
 
 def write_random_binary_file(
         filepath: Path, 
-        size : int = 1* FileSizeUnit.GB, 
-        chunk_size: int = DEFAULT_CHUNK_SIZE) -> (Path, str):
+        size : int , 
+        chunk_size: int = DEFAULT_CHUNK_SIZE) -> str:
     """ Write a random binary file of specified size """
     sha = hashlib.sha256()
     with open_file(filepath, "wb") as f:
