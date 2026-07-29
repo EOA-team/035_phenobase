@@ -21,9 +21,11 @@ def build_unc_path(hostname, share, folder):
 def write_random_binary_file(
         filepath: Path, 
         size : int , 
-        chunk_size: int = DEFAULT_CHUNK_SIZE) -> str:
-    """ Write a random binary file of specified size """
+        chunk_size: int = DEFAULT_CHUNK_SIZE) -> tuple[str, str]:
+    """ Write a random binary file of specified size
+     and return the SHA256 checksum of the entire file and the last chunk."""
     sha = hashlib.sha256()
+    last_chunk_sha = hashlib.sha256()
     with open_file(filepath, "wb") as f:
         remaining = size
         while remaining > 0:
@@ -31,7 +33,9 @@ def write_random_binary_file(
             f.write(chunk)
             sha.update(chunk)
             remaining -= len(chunk)
-    return sha.hexdigest()
+            if remaining <= 0:
+                last_chunk_sha.update(chunk)
+    return sha.hexdigest(), last_chunk_sha.hexdigest()
 
 def get_sha256sum(filepath, chunk_size=DEFAULT_CHUNK_SIZE):
          sha = hashlib.sha256()
