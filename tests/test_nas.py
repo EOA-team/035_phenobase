@@ -31,7 +31,7 @@ from smbclient import (
 import pytest
 import time
 
-from src.smbfile_utils import (
+from src.nas_helper import (
     build_unc_path, 
     write_random_binary_file, 
     get_sha256sum,

@@ -14,18 +14,19 @@ import pytest
 from pathlib import Path
 from hashlib import sha256
 
-from src.smbfile_utils import (
+from src.nas_helper import (
     build_unc_path, 
+    connect_to_nas,
     write_random_binary_file, 
     get_sha256sum,
     FileSizeUnit,
     copy_from_nas_to_local,
-    copy_from_nas_to_nas
+    copy_from_nas_to_nas,
+    User,
+    Password
 )
 from smbprotocol.exceptions import SMBOSError
 from smbprotocol.header import NtStatus
-
-from src.nas_helpers import connect_to_nas, User, Password
 
 from enum import StrEnum
 from dotenv import load_dotenv

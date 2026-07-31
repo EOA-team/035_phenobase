@@ -1,5 +1,5 @@
-from src.smbfile_utils import build_unc_path, write_random_binary_file, get_sha256sum, get_sha256sum_last_chunk ,FileSizeUnit, DEFAULT_CHUNK_SIZE
-import src.smbfile_utils 
+from src.nas_helper import build_unc_path, write_random_binary_file, get_sha256sum, get_sha256sum_last_chunk ,FileSizeUnit, DEFAULT_CHUNK_SIZE
+import src.nas_helper 
 import pytest
 
 
@@ -9,7 +9,7 @@ FILESIZE = FileSizeUnit.MB * 10
 def mock_smb_as_local_file(monkeypatch):
     """ Redirects open_file to Python's built-in open
     becaue the NAS is not available in the CI environment. """
-    monkeypatch.setattr(src.smbfile_utils, "open_file", open)
+    monkeypatch.setattr(src.nas_helper, "open_file", open)
 
 
 def test_build_unc_path():
