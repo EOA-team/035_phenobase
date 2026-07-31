@@ -4,6 +4,7 @@ import os
 import hashlib
 from pathlib import Path
 from smbclient import open_file
+import smbclient
 from enum import IntEnum
 class FileSizeUnit(IntEnum):
     """Enumeration for file size units."""
@@ -17,6 +18,21 @@ DEFAULT_CHUNK_SIZE =  1* FileSizeUnit.MB
 def build_unc_path(hostname, share, folder):
     """ Build a UNC path """
     return rf"\\{hostname}\{share}\{folder}"
+
+
+def copy_from_nas_to_local(nas_path: Path, local_path: Path, chunk_size: int = DEFAULT_CHUNK_SIZE):
+    """ Copy a file from NAS to local filesystem in chunks """
+    with open_file(nas_path, "rb") as src, open(local_path, "wb") as dst:
+        while chunk := src.read(chunk_size):
+            dst.write(chunk)
+
+def copy_from_nas_to_nas(nas_path1: Path, nas_path2: Path, chunk_size: int = DEFAULT_CHUNK_SIZE):
+    """ Copy a file from NAS to NAS in chunks """
+    with smbclient.open_file(nas_path1, "rb", share_access='r') as src:
+       with smbclient.open_file(nas_path2, "wb") as dst:
+        while chunk := src.read(chunk_size):
+             dst.write(chunk)
+
 
 def write_random_binary_file(
         filepath: Path, 
