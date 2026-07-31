@@ -9,27 +9,26 @@ https://github.com/EOA-team/035_phenobase/issues/3
 """
 
 import os
-import smbclient
-import pytest
-from pathlib import Path
 from hashlib import sha256
+from pathlib import Path
 
-from src.nas_helper import (
-    build_unc_path, 
-    connect_to_nas,
-    write_random_binary_file, 
-    get_sha256sum,
-    FileSizeUnit,
-    copy_from_nas_to_local,
-    copy_from_nas_to_nas,
-    User,
-    Password
-)
+import pytest
+import smbclient
+from dotenv import load_dotenv
 from smbprotocol.exceptions import SMBOSError
 from smbprotocol.header import NtStatus
 
-from enum import StrEnum
-from dotenv import load_dotenv
+from src.file_utils import get_sha256sum, write_random_file
+
+from src.nas_helper import (
+    FileSizeUnit,
+    Password,
+    User,
+    build_unc_path,
+    connect_to_nas,
+    copy_from_nas_to_local,
+    copy_from_nas_to_nas
+)
 
 load_dotenv()
 
@@ -42,6 +41,9 @@ NAS_TARGET = build_unc_path(
 #Drone Data Location on FlexCache(mounted on Gamarello Cluster)
 FLEXCACHE_TARGET = "/agroscope/EO_drone/drone"
 
+FILESIZE = FileSizeUnit.MB * 10
+CHUNKSIZE = FileSizeUnit.MB * 1
+
 @pytest.fixture(scope="function")
 def testfile():
     """Service User creates and deletes a test file
@@ -53,7 +55,10 @@ def testfile():
     nas_filepath = Path(NAS_TARGET) / filename
     #Create File with Service User
     connect_to_nas(user_type=User.SERVICE, password=Password.SERVICE) 
-    expected_sha256sum, _ = write_random_binary_file(nas_filepath, FileSizeUnit.MB * 1)
+    with smbclient.open_file(nas_filepath, "wb") as f:
+        expected_sha256sum, _ = write_random_file(
+            stream=f, size=FILESIZE,chunk_size=CHUNKSIZE
+        )
     yield nas_filepath, expected_sha256sum
     #Delete with Service User
     connect_to_nas(user_type=User.SERVICE, password=Password.SERVICE)
@@ -65,14 +70,18 @@ def testfile():
 
 def test_write_file(testfile):
     """Only Service User should be able to write a file on NAS,"""
-    nas_filepath, expected_sha256sum = testfile
     # Service user write to NAS (done in fixture)
     nas_filepath, expected_sha256sum = testfile 
-    assert get_sha256sum(nas_filepath) == expected_sha256sum
+    with smbclient.open_file(nas_filepath, "rb") as f:
+        assert get_sha256sum(f, chunk_size=CHUNKSIZE) == expected_sha256sum
     # Normal user write to NAS
     connect_to_nas(user_type=User.NORMAL, password=Password.NORMAL)
-    with pytest.raises(SMBOSError) as exc_info:
-        write_random_binary_file(nas_filepath, FileSizeUnit.MB * 1)
+    with (
+        pytest.raises(SMBOSError) as exc_info,
+        smbclient.open_file(nas_filepath, "wb") as f
+    ):
+         write_random_file(stream=f, size=FILESIZE,chunk_size=CHUNKSIZE)
+       
     assert exc_info.value.ntstatus == NtStatus.STATUS_ACCESS_DENIED, (
         f"Expected STATUS_ACCESS_DENIED, but got {exc_info.value.ntstatus}"
     )
@@ -82,10 +91,13 @@ def test_read_file(testfile):
     nas_filepath, expected_sha256sum = testfile
     #Read with Normal User
     connect_to_nas(user_type=User.NORMAL, password=Password.NORMAL)
-    assert get_sha256sum(nas_filepath) == expected_sha256sum
+    with smbclient.open_file(nas_filepath, "rb") as f:
+        assert get_sha256sum(stream=f, chunk_size=CHUNKSIZE) == expected_sha256sum
     #Read with Service User
     connect_to_nas(user_type=User.SERVICE, password=Password.SERVICE)
-    assert get_sha256sum(nas_filepath) == expected_sha256sum
+    with smbclient.open_file(nas_filepath, "rb") as f:
+        assert get_sha256sum(stream=f, chunk_size=CHUNKSIZE) == expected_sha256sum
+
 
 def test_delete_file(testfile):
     """Only Service User should be able to delete a file on NAS"""
@@ -155,7 +167,8 @@ def test_copy_file_nas_to_nas(testfile):
     connect_to_nas(user_type=User.SERVICE, password=Password.SERVICE)
     copy_from_nas_to_nas(nas_filepath, copy_nas_filepath)
     assert smbclient.path.exists(copy_nas_filepath)
-    assert get_sha256sum(copy_nas_filepath) == expected_sha256sum
+    with smbclient.open_file(copy_nas_filepath, "rb") as f:
+        assert get_sha256sum(stream=f, chunk_size=CHUNKSIZE) == expected_sha256sum
     smbclient.remove(copy_nas_filepath)  # Clean up after test
 
 def test_copy_file_nas_to_local(testfile, tmp_path):

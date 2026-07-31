@@ -1,16 +1,15 @@
 """File system Utilities for SMB/CIFS file shares"""
 
 import os
-import hashlib
+import shutil
+from enum import IntEnum, StrEnum
 from pathlib import Path
-from smbclient import reset_connection_cache, register_session
+
 import smbclient
-from enum import IntEnum
-from enum import StrEnum
 from dotenv import load_dotenv
+from smbclient import register_session, reset_connection_cache
 
 load_dotenv()  # Load environment variables from .env file
-
 
 class User(StrEnum):
     """Available User Types"""
@@ -47,58 +46,24 @@ def build_unc_path(hostname, share, folder):
 
 
 def copy_from_nas_to_local(nas_path: Path, local_path: Path, chunk_size: int = DEFAULT_CHUNK_SIZE):
-    """ Copy a file from NAS to local filesystem in chunks """
+    """ Copy a file from NAS to local filesystem in chunks in binary mode """
     with(
         smbclient.open_file(nas_path, "rb") as src,
         open(local_path, "wb") as dst
     ):
-        while chunk := src.read(chunk_size):
-            dst.write(chunk)
+         shutil.copyfileobj(src, dst, chunk_size)
 
-def copy_from_nas_to_nas(nas_path1: Path, nas_path2: Path, chunk_size: int = DEFAULT_CHUNK_SIZE):
-    """ Copy a file from NAS to NAS in chunks """
+def copy_from_nas_to_nas(nas_src: Path, nas_dst: Path, chunk_size: int = DEFAULT_CHUNK_SIZE):
+    """ Copy a file from NAS to NAS in chunks in binary mode """
     with(
-        smbclient.open_file(nas_path1, "rb", share_access='r') as src,
-        smbclient.open_file(nas_path2, "wb") as dst,
+        smbclient.open_file(nas_src, "rb") as src,
+        smbclient.open_file(nas_dst, "wb") as dst
     ):
-        while chunk := src.read(chunk_size):
-             dst.write(chunk)
+         shutil.copyfileobj(src, dst, chunk_size)
 
 
-def write_random_binary_file(
-        filepath: Path, 
-        size : int , 
-        chunk_size: int = DEFAULT_CHUNK_SIZE) -> tuple[str, str]:
-    """ Write a random binary file of specified size
-     return tuple of (full file sha256, last chunk sha256)
-     """
-    sha = hashlib.sha256()
-    last_chunk_sha = hashlib.sha256()
-    with smbclient.open_file(str(filepath), "wb") as f:
-        remaining = size
-        while remaining > 0:
-            chunk = os.urandom(min(chunk_size, remaining))
-            f.write(chunk)
-            sha.update(chunk)
-            remaining -= len(chunk)
-            if remaining <= 0:
-                last_chunk_sha.update(chunk)
-    return sha.hexdigest(), last_chunk_sha.hexdigest()
 
-def get_sha256sum(filepath, chunk_size=DEFAULT_CHUNK_SIZE):
-         sha = hashlib.sha256()
-         with smbclient.open_file(str(filepath), "rb") as f:
-             while chunk := f.read(chunk_size):
-                 sha.update(chunk)
-         return sha.hexdigest()
 
-def get_sha256sum_last_chunk(filepath, chunk_size=DEFAULT_CHUNK_SIZE):
-         """ Calculate the SHA256 checksum of the last chunk of a file """
-         sha = hashlib.sha256()
-         with smbclient.open_file(str(filepath), "rb") as f:
-             f.seek(-chunk_size, os.SEEK_END)
-             sha.update(f.read(chunk_size))
-         return sha.hexdigest()
 
  
 
