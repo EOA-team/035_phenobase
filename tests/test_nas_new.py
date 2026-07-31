@@ -9,6 +9,7 @@ https://github.com/EOA-team/035_phenobase/issues/3
 """
 
 import os
+import smbclient
 import pytest
 from pathlib import Path
 from hashlib import sha256
@@ -17,24 +18,10 @@ from src.smbfile_utils import (
     build_unc_path, 
     write_random_binary_file, 
     get_sha256sum,
-    get_sha256sum_last_chunk,
     FileSizeUnit,
     copy_from_nas_to_local,
     copy_from_nas_to_nas
 )
-
-from smbclient import (
-    register_session, 
-    listdir, open_file, 
-    path,
-    remove,
-    rename,
-    mkdir,
-    rmdir,
-    copyfile
-)
-
-import smbclient
 from smbprotocol.exceptions import SMBOSError
 from smbprotocol.header import NtStatus
 
@@ -70,7 +57,7 @@ def testfile():
     #Delete with Service User
     connect_to_nas(user_type=User.SERVICE, password=Password.SERVICE)
     try:
-        remove(nas_filepath) 
+        smbclient.remove(nas_filepath) 
     except SMBOSError as e:
         if e.ntstatus != NtStatus.STATUS_OBJECT_NAME_NOT_FOUND:
             raise
@@ -105,13 +92,13 @@ def test_delete_file(testfile):
     #Delete with Normal User
     connect_to_nas(user_type=User.NORMAL, password=Password.NORMAL)
     with pytest.raises(SMBOSError) as exc_info:
-        remove(nas_filepath)
+        smbclient.remove(nas_filepath)
     assert exc_info.value.ntstatus == NtStatus.STATUS_ACCESS_DENIED, (
         f"Expected STATUS_ACCESS_DENIED, but got {exc_info.value.ntstatus}")
     #Delete with Service User
     connect_to_nas(user_type=User.SERVICE, password=Password.SERVICE)
-    remove(nas_filepath)  # Service user can delete
-    assert not nas_filepath.exists()
+    smbclient.remove(nas_filepath)  # Service user can delete
+    assert not smbclient.path.exists(nas_filepath)  
 
 def test_rename_file(testfile):
     """Normal user should not be able move a file on NAS"""
@@ -121,17 +108,17 @@ def test_rename_file(testfile):
     #Rename with Normal User
     connect_to_nas(user_type=User.NORMAL, password=Password.NORMAL)
     with pytest.raises(SMBOSError) as exc_info:
-        rename(nas_filepath, new_nas_filepath)
+        smbclient.rename(nas_filepath, new_nas_filepath)
     assert exc_info.value.ntstatus == NtStatus.STATUS_ACCESS_DENIED, (
         f"Expected STATUS_ACCESS_DENIED, but got {exc_info.value.ntstatus}"
     )
 
     #Rename with Service User
     connect_to_nas(user_type=User.SERVICE, password=Password.SERVICE)
-    rename(nas_filepath, new_nas_filepath)  
-    assert new_nas_filepath.exists()
-    assert not nas_filepath.exists()
-    remove(new_nas_filepath)  # Clean up after test
+    smbclient.rename(nas_filepath, new_nas_filepath)  
+    assert smbclient.path.exists(new_nas_filepath)
+    assert not smbclient.path.exists(nas_filepath)
+    smbclient.remove(new_nas_filepath)  # Clean up after test
 
 def test_create_folder():
     """Only Service User should be able to create a folder on NAS"""
@@ -140,15 +127,15 @@ def test_create_folder():
     #Create Folder with Normal User
     connect_to_nas(user_type=User.NORMAL, password=Password.NORMAL)
     with pytest.raises(SMBOSError) as exc_info:
-        mkdir(new_folder)
+        smbclient.mkdir(new_folder)
     assert exc_info.value.ntstatus == NtStatus.STATUS_ACCESS_DENIED, (
         f"Expected STATUS_ACCESS_DENIED, but got {exc_info.value.ntstatus}"
     )
     #Create with Service User
     connect_to_nas(user_type=User.SERVICE, password=Password.SERVICE)
-    mkdir(new_folder)
-    assert new_folder.exists()
-    rmdir(new_folder)  # Clean up after test   
+    smbclient.mkdir(new_folder)
+    assert smbclient.path.exists(new_folder)
+    smbclient.rmdir(new_folder)  # Clean up after test   
     
 def test_copy_file_nas_to_nas(testfile):
     """Only Service User should be able to copy a file from NAS to NAS"""
@@ -168,7 +155,7 @@ def test_copy_file_nas_to_nas(testfile):
     copy_from_nas_to_nas(nas_filepath, copy_nas_filepath)
     assert smbclient.path.exists(copy_nas_filepath)
     assert get_sha256sum(copy_nas_filepath) == expected_sha256sum
-    remove(copy_nas_filepath)  # Clean up after test
+    smbclient.remove(copy_nas_filepath)  # Clean up after test
 
 def test_copy_file_nas_to_local(testfile, tmp_path):
     """Both users should be able to copy a file from NAS to local path"""
