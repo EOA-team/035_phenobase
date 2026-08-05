@@ -8,7 +8,7 @@ skbclient.open_file() is tested in integration_tests in test_nas.py
 from src.file_utils import get_sha256sum, get_sha256sum_last_chunk, write_random_file
 from src.nas_helper import FileSizeUnit, build_unc_path
 
-FILESIZE = FileSizeUnit.MB * 10  
+FILESIZE = FileSizeUnit.MB * 10
 CHUNKSIZE = FileSizeUnit.MB * 1
 
 
@@ -26,18 +26,17 @@ def test_verify_filewrite_with_checksum(tmp_path):
 
     with open(test_file, "wb") as f:
         write_hash, write_hash_last = write_random_file(
-            stream=f, size=FILESIZE,chunk_size=CHUNKSIZE
+            stream=f, size=FILESIZE, chunk_size=CHUNKSIZE
         )
-    
+
     with open(test_file, "rb") as f:
         read_hash = get_sha256sum(stream=f, chunk_size=CHUNKSIZE)
-        read_hash_last_chunk = get_sha256sum_last_chunk(stream=f, chunk_size=CHUNKSIZE) 
-    
+        read_hash_last_chunk = get_sha256sum_last_chunk(stream=f, chunk_size=CHUNKSIZE)
+
     assert write_hash == read_hash, (
         f"Expected full file hash {write_hash}, but got {read_hash}"
-    )   
+    )
 
     assert write_hash_last == read_hash_last_chunk, (
         f"Expected last chunk hash {write_hash_last}, but got {read_hash_last_chunk}"
     )
-    
