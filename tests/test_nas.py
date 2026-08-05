@@ -37,8 +37,6 @@ NAS_TARGET = build_unc_path(
     share="Data-EODrone",
     folder="drone",
 )
-# Drone Data Location on FlexCache(mounted on Gamarello Cluster)
-FLEXCACHE_TARGET = "/agroscope/EO_drone/drone"
 
 FILESIZE = FileSizeUnit.MB * 10
 CHUNKSIZE = FileSizeUnit.MB * 1
@@ -67,6 +65,8 @@ def testfile():
     except SMBOSError as e:
         if e.ntstatus != NtStatus.STATUS_OBJECT_NAME_NOT_FOUND:
             raise
+    finally:
+        smbclient.reset_connection_cache()
 
 
 @pytest.mark.integration_test
