@@ -19,7 +19,6 @@ from smbprotocol.exceptions import SMBOSError
 from smbprotocol.header import NtStatus
 
 from src.file_utils import get_sha256sum, write_random_file
-
 from src.nas_helper import (
     FileSizeUnit,
     Password,
@@ -27,7 +26,7 @@ from src.nas_helper import (
     build_unc_path,
     connect_to_nas,
     copy_from_nas_to_local,
-    copy_from_nas_to_nas
+    copy_from_nas_to_nas,
 )
 
 load_dotenv()

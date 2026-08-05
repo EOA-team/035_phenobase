@@ -1,6 +1,6 @@
-import io
-import os 
 import hashlib
+import io
+import os
 
 
 def write_random_file(
