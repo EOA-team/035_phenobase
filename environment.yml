@@ -20,5 +20,6 @@ dependencies:
   - mlflow
   - paramiko
   - types-paramiko
+  - smbprotocol
   - pip: 
   # pip-only packages go here if needed

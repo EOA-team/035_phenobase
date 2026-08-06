@@ -27,8 +27,26 @@ ruff format --diff  # Preview formatting diff
 ### Pytest
 
 ```bash
-pytest --cov=src/ --cov-fail-under=80  # Check coverage
-pytest -s -v                           # Run all tests 
+# Run all (unit-tests)(integration-tests)(slow integration-tests)
+pytest -s -v           
+pytest --cov=src/ --cov-fail-under=80
+
+# Run only (unit-tests)(integration-tests)
+pytest -s -v \
+--without-slow-integration       
+
+pytest --cov=src/ --cov-fail-under=80 \
+--without-slow-integration 
+
+# Run only (unit-tests)
+pytest -s -v \
+--without-slow-integration \
+--without-integration
+
+pytest --cov=src/ --cov-fail-under=80 \
+--without-slow-integration \
+--without-integration
+
 ```
 
 ### start traefik(powershell)
