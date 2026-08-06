@@ -1,8 +1,8 @@
-from paramiko import SSHClient
-from src.ssh_helpers import connect
-import os 
+import os
 from pathlib import Path
+
 import pytest
+from paramiko import SSHClient
 
 from src.nas_helper import (
     FileSizeUnit,
@@ -12,7 +12,7 @@ from src.nas_helper import (
 FLEXCACHE_TARGET = "/agroscope/EO_drone/drone"
 
 FILESIZE = FileSizeUnit.MB * 10
-CHUNKSIZE = FileSizeUnit.MB * 1
+
 
 @pytest.fixture(scope="function")
 def testfile():
@@ -23,22 +23,28 @@ def testfile():
     """
     filename = f"pytest_{os.urandom(4).hex()}.bin"
     flexcach_filepath = FLEXCACHE_TARGET + "/" + filename
+    
     #Create File with Service User
-    service_client = connect(
+    client = SSHClient()
+    client.load_system_host_keys(filename=str(Path.home() / ".ssh" / "known_hosts"))
+    client.connect(
+        hostname=os.getenv("GAMARELLO_ADDRESS"),
         username=os.getenv("SERVICE_USER"),
         password=os.getenv("SERVICE_PASSWORD"),
-        hostname=os.getenv("GAMARELLO_ADDRESS"),
     )
-    _, stdout, _ = service_client.exec_command(
+    client.exec_command(
         f"dd if=/dev/urandom of={flexcach_filepath} bs=1M count={FILESIZE // (1024*1024)} "
-        f"2>/dev/null && sha256sum {flexcach_filepath}"
+    )
+
+    _, stdout, _ = client.exec_command(
+        f"sha256sum {flexcach_filepath} "
     )
     expected_sha256sum = stdout.read().decode().split()[0]
-
+   
     yield flexcach_filepath, expected_sha256sum
     #Delete with Service User 
-    service_client.exec_command(f"rm -f {flexcach_filepath}")
-    service_client.close()
+    client.exec_command(f"rm -f {flexcach_filepath}")
+    client.close()
 
 
 def test_write_file(testfile):
@@ -48,18 +54,20 @@ def test_write_file(testfile):
     flexcache_filepath, expected_sha256sum = testfile
 
     # Normal user write to FlexCache
-    normal_client = connect(
+    client = SSHClient()
+    client.load_system_host_keys(filename=str(Path.home() / ".ssh" / "known_hosts"))
+    client.connect(
+        hostname=os.getenv("GAMARELLO_ADDRESS"),
         username=os.getenv("NORMAL_USER"),
         password=os.getenv("NORMAL_PASSWORD"),
-        hostname=os.getenv("GAMARELLO_ADDRESS"),
     )
-    _, stdout, _ = normal_client.exec_command(
+    _, stdout, _ = client.exec_command(
         f"sha256sum {flexcache_filepath}"
     )
     read_sha256sum = stdout.read().decode().split()[0]
     assert read_sha256sum == expected_sha256sum
 
-    _, stdout, _ = normal_client.exec_command(
+    _, stdout, _ = client.exec_command(
         f"dd if=/dev/urandom of={flexcache_filepath} bs=1M count={FILESIZE // (1024*1024)}"
     )
     exit_status = stdout.channel.recv_exit_status()
