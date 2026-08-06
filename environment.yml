@@ -1,7 +1,6 @@
 name: 035_phenobase
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - python=3.12
   - mypy
@@ -21,5 +20,6 @@ dependencies:
   - paramiko
   - types-paramiko
   - smbprotocol
+  - rasterio 
   - pip: 
   # pip-only packages go here if needed
