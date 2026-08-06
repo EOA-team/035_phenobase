@@ -54,6 +54,7 @@ def testfile():
     client.exec_command(f"rm -f {flexcach_filepath}")
     client.close()
 
+
 @pytest.mark.integration_test
 def test_write_file(testfile):
     """Only Service User should be able to write a file on FlexCache"""
