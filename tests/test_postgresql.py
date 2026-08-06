@@ -9,11 +9,15 @@ from src.postgresql_helper import connect_to_database
 
 load_dotenv()  # Load environment variables from .env file
 
+# phenobase = production database, test_phenobase = test database
+DBS_TO_TEST = ["phenobase", "test_phenobase"]
 
-@pytest.fixture(name="phenobase", scope="function")
-def phenobase_conn():
-    """PostgreSQL connection to database with the name phenobase"""
-    conn = connect_to_database(dbname="phenobase")
+
+@pytest.fixture(name="phenobase", scope="function", params=DBS_TO_TEST)
+def phenobase_conn(request):
+    """PostgreSQL connection to production and test database.
+    The connection is established before each test and closed after the test."""
+    conn = connect_to_database(dbname=request.param)
     yield conn
     conn.close()
 
