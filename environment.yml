@@ -24,5 +24,7 @@ dependencies:
   - planetary-computer
   - pystac-client 
   - numpy 
+  - pandas
+  - geopandas
   - pip: 
   # pip-only packages go here if needed

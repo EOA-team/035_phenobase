@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from rasterio.transform import from_bounds
 from rasterio.warp import Resampling, reproject
 from rasterio.warp import transform as rio_transform
+from pathlib import Path
 
 CENTER = (2_681_389.0, 1_253_653.0)  # Reckenholz, EPSG:2056
 LENGTH = 1000.0  # 1000m square

@@ -38,3 +38,4 @@ mlflow.db
 
 # Ignore generated files
 *.tif*
+*.geojson
