@@ -9,7 +9,11 @@ from pathlib import Path
 load_dotenv()   
 
 file_dir = Path(__file__).parent
-OUT = file_dir / "output" / "experiment_plot.geojson"
+OUT_DIR = file_dir / "output" 
+OUT_FILE = "experiment_plot.geojson"
+FIELDS_OF_INTEREST = 'RE_215' # ZOFE Experiment Plot 
+
+
 
 def get_geowp_connection():
     return psycopg2.connect(
@@ -30,13 +34,15 @@ def list_geowp_tables(conn: connection):
     tables = cur.fetchall()
     cur.close()
     return tables
-    
+
 
 if __name__ == "__main__":
+    os.makedirs(OUT_DIR, exist_ok=True)
     conn = get_geowp_connection()
     schlaege_tbl = "agroscope_versuchsflaechen_2023.versuchsflaeche"
-    gdf =  gpd.read_postgis(f"SELECT * FROM {schlaege_tbl} WHERE id_ags = 'RE_112O' ", conn)
+    gdf = gpd.read_postgis(f"SELECT geom FROM {schlaege_tbl} WHERE id_ags = '{FIELDS_OF_INTEREST}' ", conn)
     gdf = gdf.to_crs("EPSG:2056")
-    gdf.to_file(OUT, driver="GeoJSON")
+    out_file = OUT_DIR / OUT_FILE
+    gdf.to_file(out_file, driver="GeoJSON")
 
     conn.close()
