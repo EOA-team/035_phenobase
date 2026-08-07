@@ -1,3 +1,8 @@
+"""
+Creates a 1000m x 1000m orthomosaic as COG from the latest Sentinel-2 tiles covering Reckenholz, Switzerland.
+"""
+
+import os
 from pathlib import Path
 
 import numpy as np
@@ -6,17 +11,20 @@ import pystac_client
 import rasterio
 from dotenv import load_dotenv
 from rasterio.transform import from_bounds
-from rasterio.warp import reproject, Resampling, transform as rio_transform
+from rasterio.warp import Resampling, reproject
+from rasterio.warp import transform as rio_transform
 
-CENTER = (2_681_319.0, 1_253_278.0)  # Reckenholz
-PX_SIZE = 10  # 10m per pixel
-N_PX = 150  # 150 pixels per side
-LENGTH = N_PX * PX_SIZE  # 1500m
+CENTER = (2_681_389.0, 1_253_653.0)  # Reckenholz, EPSG:2056
+LENGTH = 1000.0  # 1000m square
+RES = 10  # output pixel size in meters (10 cm native source)
+N_PX = int(LENGTH / RES)
 
-load_dotenv() 
+load_dotenv()
 
 file_dir = Path(__file__).parent
-OUT = file_dir / "reckenholz_s2_rgb.tif"
+OUT = file_dir / "output" / "reckenholz_s2.tif"
+
+os.makedirs(OUT.parent, exist_ok=True)
 
 half = LENGTH / 2
 t = from_bounds(

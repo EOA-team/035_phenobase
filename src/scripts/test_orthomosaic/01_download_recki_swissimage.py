@@ -1,18 +1,26 @@
+"""
+Creates a 1000m x 1000m orthomosaic as COG from the latest swissimage tiles covering Reckenholz, Switzerland.
+"""
+
+import os
 from pathlib import Path
 
 import rasterio
 import requests
 from rasterio.merge import merge
 from rasterio.transform import from_bounds
-from rasterio.warp import Resampling, transform as rio_transform
+from rasterio.warp import Resampling
+from rasterio.warp import transform as rio_transform
 
 CENTER = (2_681_389.0, 1_253_653.0)  # Reckenholz, EPSG:2056
-LENGTH = 1000.0
+LENGTH = 1000.0  # 1000m square
 RES = 0.1  # output pixel size in meters (10 cm native source)
 N_PX = int(LENGTH / RES)
 
 file_dir = Path(__file__).parent
-OUT = file_dir / "reckenholz_swissimage.tif"
+OUT = file_dir / "output" / "reckenholz_swissimage.tif"
+
+os.makedirs(OUT.parent, exist_ok=True)
 
 half = LENGTH / 2
 lon, lat = rio_transform(
@@ -23,11 +31,15 @@ lon, lat = rio_transform(
 )
 bbox = (min(lon), min(lat), max(lon), max(lat))
 
-r = requests.get("https://data.geo.admin.ch/api/stac/v0.9/search", params={
-    "collections": "ch.swisstopo.swissimage-dop10",
-    "bbox": ",".join(map(str, bbox)),
-    "limit": 100,
-})
+r = requests.get(
+    "https://data.geo.admin.ch/api/stac/v0.9/search",
+    params={
+        "collections": "ch.swisstopo.swissimage-dop10",
+        "bbox": ",".join(map(str, bbox)),
+        "limit": 100,
+    },
+    timeout=30,
+)
 r.raise_for_status()
 
 by_tile = {}
