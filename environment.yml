@@ -21,5 +21,6 @@ dependencies:
   - types-paramiko
   - smbprotocol
   - rasterio 
+  - httpx2
   - pip: 
   # pip-only packages go here if needed
