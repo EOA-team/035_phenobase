@@ -2,7 +2,12 @@
 Docstring for src.main
 """
 
-from fastapi import FastAPI
+from typing import Annotated
+
+from fastapi import Depends, FastAPI
+
+from src.auth import get_current_user
+from src.models import UserRead
 
 app = FastAPI(
     title="Phenobase API",
@@ -31,3 +36,12 @@ def health_check():
     Returns 200 with {status: ok} if the API is running
     """
     return {"status": "ok"}
+
+
+@app.get("/auth/me", response_model=UserRead)
+def auth_me(current_user: Annotated[UserRead, Depends(get_current_user)]):
+    """**Get current user:**
+    Returns the current user based on the provided API key.
+    Requires an 'X-API-Key' header with a valid API key.
+    """
+    return current_user

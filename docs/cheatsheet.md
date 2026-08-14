@@ -56,7 +56,7 @@ pytest --cov=src/ --cov-fail-under=80 \
 ```
 ### uvicorn 
 ```bash
-uvicorn src.scripts.api_dummy:app --host localhost --port 8000
+uvicorn src.main:app --host localhost --port 8000
 ```
 
 ### mlflow 

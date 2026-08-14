@@ -1,32 +1,34 @@
 """Database engine and session management for Phenobase."""
+
 import os
 from enum import StrEnum
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlmodel import Session
 
 load_dotenv()
 
 
-class PHENOBASE_ENV(StrEnum):
+class PhenobaseEnv(StrEnum):
     TEST = "test"
     PRODUCTION = "production"
 
 
 DB_NAME_LUT = {
-    PHENOBASE_ENV.TEST: "test_phenobase",
-    PHENOBASE_ENV.PRODUCTION: "phenobase",
+    PhenobaseEnv.TEST: "test_phenobase",
+    PhenobaseEnv.PRODUCTION: "phenobase",
 }
 
 
-def get_database_name(phenobase_env: PHENOBASE_ENV) -> str:
+def get_database_name(phenobase_env: PhenobaseEnv) -> str:
     return DB_NAME_LUT[phenobase_env]
 
 
 def get_engine():
     """Create a SQLAlchemy engine for the specified database."""
 
-    phenobase_env = PHENOBASE_ENV(os.getenv("PHENOBASE_ENV"))
+    phenobase_env = PhenobaseEnv(os.getenv("PHENOBASE_ENV"))
     dbname = get_database_name(phenobase_env)
 
     print(f"Using database: {dbname}")
@@ -41,7 +43,13 @@ def get_engine():
         url,
         pool_size=5,  # Phenobase currently only serves a small number of possible concurrent requests, so a small pool is sufficient
         max_overflow=5,  # Small cushion if there are additional requests, but not too many to avoid overwhelming the database
-        pool_pre_ping=True,  # Make sure theyes but in the test i would want to c connection is alive before using it
+        pool_pre_ping=True,  # Make sure the connection is still alive before using it, to avoid errors due to stale connections
     )
 
     return engine
+
+
+def get_db_session():
+    """Yield a database session for FastAPI dependency injection."""
+    with Session(get_engine()) as session:
+        yield session

@@ -1,6 +1,7 @@
-"""Script to generate a new API key and its SHA-256 hash which is stored in the database. 
+"""Script to generate a new API key and its SHA-256 hash which is stored in the database.
 API key : Should be send to new user via encrypted email.
-Key hash : Should be stored in the database """
+Key hash : Should be stored in the database"""
+
 import hashlib
 import secrets
 

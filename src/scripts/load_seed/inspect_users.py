@@ -18,5 +18,3 @@ if __name__ == "__main__":
         statement = select(User)
         df = pd.read_sql(statement, phenobase_engine)
         print(df)
-
-  
