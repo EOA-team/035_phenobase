@@ -1,4 +1,5 @@
 from sqlmodel import Field, SQLModel
+from pydantic import BaseModel
 
 from src.api import Role
 
@@ -16,7 +17,7 @@ class User(SQLModel, table=True):
     key_hash: str = Field(max_length=64, unique=True)
 
 
-class UserRead(SQLModel):
+class UserRead(BaseModel):
     """Response model for reading user data via API
     Excludes sensitive/not needed information like key_hash and id."""
 
