@@ -22,5 +22,7 @@ dependencies:
   - smbprotocol
   - rasterio 
   - httpx2
+  - sqlmodel
+  - psycopg
   - pip: 
   # pip-only packages go here if needed
