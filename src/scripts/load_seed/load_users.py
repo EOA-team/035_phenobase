@@ -17,7 +17,7 @@ from src.models import User
 
 load_dotenv()
 # Real users data, that can be used for testing 
-SEED_FOLDER = r"drone\phenobase\seed\test_db"
+SEED_FOLDER = r"drone\phenobase\production\seed"
 
 
 def load_users_from_nas()->list[dict]:
@@ -34,6 +34,10 @@ def load_users_from_nas()->list[dict]:
         return users_data
     
 if __name__ == "__main__":
+    phenobase_environment = os.getenv("PHENOBASE_ENV")
+    if phenobase_environment != "test":
+        raise ValueError("This script should only be run in the test environment.")
+
     users_data = load_users_from_nas()
     phenobase_engine = get_engine()
 

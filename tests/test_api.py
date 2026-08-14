@@ -23,3 +23,5 @@ def test_api_info():
     assert data["name"] == app.title
     assert data["version"] == app.version
     assert data["description"] == app.description
+
+
