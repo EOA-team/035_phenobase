@@ -1,0 +1,18 @@
+[
+  {
+    "f_account": "F12345678",
+    "firstname": "Hans ",
+    "lastname": "Müller",
+    "role": "reader",
+    "email": "hans.mueller@example.com",
+    "key_hash": "9e1d709284aacaec4993625f6a3380ab3d9f73491a26d75a472e0ee4a7510c2b"
+  },
+  {
+    "f_account": "F87654321",
+    "firstname": "Max ",
+    "lastname": "Mustermann",
+    "role": "writer",
+    "email": "max.mustermann@example.com",
+    "key_hash": "c230c56cabe65e1dbdc0776ecddf8611b0b031b8b8a2af738e30b2cc0435593b"
+  }
+]
