@@ -44,6 +44,7 @@ def test_auth_me_valid(phenobase_db_minimal):
     assert data["f_account"] == "F12345678"
     assert data["firstname"] == "Hans "
     assert data["lastname"] == "Müller"
+    assert data["status"] == "active"
     assert data["role"] == "reader"
     assert data["email"] == "hans.mueller@example.com"
     assert "key_hash" not in data  # Ensure key_hash is not returned in the response

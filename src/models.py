@@ -1,7 +1,7 @@
 from sqlmodel import Field, SQLModel
 from pydantic import BaseModel
 
-from src.api import Role
+from src.api import Role, Status
 
 
 class User(SQLModel, table=True):
@@ -9,12 +9,13 @@ class User(SQLModel, table=True):
 
     __tablename__ = "users"
     id: int | None = Field(default=None, primary_key=True)
-    f_account: str = Field(max_length=32, unique=True)
+    f_account: str | None = Field(default=None, max_length=32, unique=True)
     firstname: str = Field(max_length=255)
     lastname: str = Field(max_length=255)
-    role: Role = Field(max_length=32)
+    status: Status = Field(max_length=32)
+    role: Role | None = Field(default=None, max_length=32)
     email: str = Field(max_length=255)
-    key_hash: str = Field(max_length=64, unique=True)
+    key_hash: str | None = Field(default=None, max_length=64, unique=True)
 
 
 class UserRead(BaseModel):
@@ -24,6 +25,7 @@ class UserRead(BaseModel):
     f_account: str
     firstname: str
     lastname: str
+    status: Status
     role: Role
     email: str
     # Note: key_hash is intentionally omitted for security reasons.
