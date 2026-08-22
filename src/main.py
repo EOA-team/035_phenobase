@@ -9,7 +9,7 @@ from fastapi import Depends, FastAPI, Response, UploadFile
 
 from src.api import Role
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
-from src.data_upload import UploadTables, upload_file_to_nas, validate_input_file
+from src.data_upload import UploadTables, validate_uploaded_file, read_upload_file, append_user_ids, upload_file_to_nas, validate_file_content
 from src.models import APIKeyHashRead, UserRead
 
 load_dotenv()
@@ -78,8 +78,20 @@ def upload_file(
 
     Requires writer privileges.
     """
-    validate_input_file(table_name, upload_file)
-    upload_file_to_nas(table_name, upload_file)
+    validate_uploaded_file(upload_file=upload_file, table_name=table_name)
+    df =(
+        read_upload_file(upload_file=upload_file)
+        .pipe(append_user_ids, current_user_id=current_user.id)
+        .pipe(validate_uploaded_file, table_name=table_name)
+    )
+
+    validated_data = validate_file_content(df=df, table_name=table_name)
+    
+    
+    upload_file_to_nas(upload_file=upload_file, table_name=table_name)
+
+    print(df.head())  # Debugging: print the first few rows of the DataFrame
+
 
     return Response(
         content=f"File {upload_file.filename} uploaded successfully to Data Platform",
