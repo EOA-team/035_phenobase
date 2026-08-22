@@ -88,12 +88,18 @@ def get_supported_filetype(table_name: UploadTables) -> FileType:
 
 def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
     """Read the uploaded file into a pandas DataFrame based on its file type."""
-    df = pd.read_csv(
+    raw_df = pd.read_csv(
         upload_file.file,
         sep=None,  # Pandas auto sniffs the separator
         engine="python",
         encoding="utf-8-sig",  # automatically remove Excel BOM artifacts safely
     )
+
+    #Basic Clearning
+    raw_df.columns = raw_df.columns.str.lower()  
+    raw_df.columns = raw_df.columns.str.strip()  
+    # Replace pandas NA and NaN with None for consistency
+    df = raw_df.replace({pd.NA: None, float("nan"): None})
 
     upload_file.file.seek(0)  # Reset file pointer to the beginning for re-reading
     return df

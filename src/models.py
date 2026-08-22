@@ -95,7 +95,7 @@ class CropType(SQLModel, CropTypeBase, table=True):
 class CropTypeInsert(CropTypeBase):
     """For inserting the id is not needed, as it will be auto-generated."""
 
-    mode: Literal[UploadModes.INSERT] = UploadModes.INSERT
+    mode: Literal[UploadModes.INSERT] 
     creator_id: int
     updater_id: int
 
@@ -103,7 +103,7 @@ class CropTypeInsert(CropTypeBase):
 class CropTypeUpdate(CropTypeBase):
     """For updating only the updater_id is needed."""
 
-    mode: Literal[UploadModes.UPDATE] = UploadModes.UPDATE
+    mode: Literal[UploadModes.UPDATE] 
     id: int
     updater_id: int
 
@@ -111,7 +111,7 @@ class CropTypeUpdate(CropTypeBase):
 class CropTypeDelete(BaseModel):
     """For deleting a CropType, only the id is needed."""
 
-    mode: Literal[UploadModes.DELETE] = UploadModes.DELETE
+    mode: Literal[UploadModes.DELETE] 
     id: int
 
 

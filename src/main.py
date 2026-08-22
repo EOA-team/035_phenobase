@@ -119,7 +119,7 @@ def upload_file(
     write_to_database(session=session, table_name=table_name, rows=validated_rows)
     
     #Write the uploaded file to NAS for logging
-    upload_csv = df.to_csv(index=False, encoding="utf-8")
+    upload_csv = df.to_csv(index=False, sep=";", encoding="utf-8")
     write_file_to_nas(table_name=table_name, data=upload_csv.encode("utf-8"))
     
 
