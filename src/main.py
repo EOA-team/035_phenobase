@@ -13,10 +13,11 @@ from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
 from src.data_upload import (
     UploadTables,
     append_user_ids,
+    export_db_table_to_csv,
     read_upload_file,
-    upload_file_to_nas,
     validate_file_content,
     validate_uploaded_file,
+    write_file_to_nas,
     write_to_database,
 )
 from src.db import get_db_session
@@ -98,10 +99,9 @@ def upload_file(
 
     validated_rows = validate_file_content(df=df, table_name=table_name)
     write_to_database(session=session, table_name=table_name, rows=validated_rows)
+    table_csv = export_db_table_to_csv(session=session, table_name=table_name)
 
-    upload_file_to_nas(upload_file=upload_file, table_name=table_name)
-
-    print(df.head())  # Debugging: print the first few rows of the DataFrame
+    write_file_to_nas(table_name=table_name, data=table_csv.encode("utf-8"))
 
     return Response(
         content=f"File {upload_file.filename} uploaded successfully to Data Platform",

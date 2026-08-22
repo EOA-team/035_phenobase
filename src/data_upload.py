@@ -9,7 +9,7 @@ import pandas as pd
 import smbclient
 from fastapi import HTTPException, UploadFile, status
 from pydantic import BaseModel, TypeAdapter, ValidationError
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from src.models import (
     CropType,
@@ -166,8 +166,8 @@ def validate_file_content(
     return validated
 
 
-def upload_file_to_nas(table_name: UploadTables, upload_file: UploadFile) -> None:
-    """Upload a file to the NAS"""
+def write_file_to_nas(table_name: UploadTables, data: bytes) -> None:
+    """Upload a any file to the NAS"""
     upload_path = build_unc_path(
         hostname=os.getenv("NAS_RECKENHOLZ"),
         share="Data-EODrone",
@@ -178,7 +178,16 @@ def upload_file_to_nas(table_name: UploadTables, upload_file: UploadFile) -> Non
 
     connect_to_nas(user_type=NasUser.SERVICE, password=NasPw.SERVICE)
     with smbclient.open_file(upload_file_path, "wb", encoding="utf-8") as f:
-        f.write(upload_file.file.read())
+        f.write(data)
+
+
+def export_db_table_to_csv(session: Session, table_name: UploadTables) -> str:
+    """Export a database table to a CSV file."""
+    sql_table = UPLOAD_SCHEMA_REGISTRY.get(UploadTables(table_name)).table
+    rows = session.exec(select(sql_table)).all()
+    df = pd.DataFrame([row.model_dump() for row in rows])
+    csv_file = df.to_csv(index=False, encoding="utf-8")
+    return csv_file
 
 
 def write_to_database(
