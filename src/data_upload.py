@@ -4,7 +4,7 @@ from enum import StrEnum
 from pathlib import Path
 
 import smbclient
-from fastapi import HTTPException, Response, UploadFile
+from fastapi import HTTPException, UploadFile
 
 from src.nas_helper import (
     Password as NasPw,
@@ -73,7 +73,7 @@ def validate_input_file(table_name: UploadTables, upload_file: UploadFile) -> No
 
 
 def upload_file_to_nas(table_name: UploadTables, upload_file: UploadFile) -> None:
-    """Upload a file to the NAS """
+    """Upload a file to the NAS"""
     upload_path = build_unc_path(
         hostname=os.getenv("NAS_RECKENHOLZ"),
         share="Data-EODrone",
@@ -85,5 +85,3 @@ def upload_file_to_nas(table_name: UploadTables, upload_file: UploadFile) -> Non
     connect_to_nas(user_type=NasUser.SERVICE, password=NasPw.SERVICE)
     with smbclient.open_file(upload_file_path, "wb", encoding="utf-8") as f:
         f.write(upload_file.file.read())
-
-    

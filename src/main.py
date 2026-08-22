@@ -5,7 +5,7 @@ Docstring for src.main
 from typing import Annotated
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, UploadFile, Response
+from fastapi import Depends, FastAPI, Response, UploadFile
 
 from src.api import Role
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user

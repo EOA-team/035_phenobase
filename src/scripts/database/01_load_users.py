@@ -1,6 +1,6 @@
-"""Loads the base users into the database.
-One user with reader role and one user with writer role are created.
-API Keys are generated using the create_api_key.py script and their key hashes are stored in the database."""
+"""Loads initial users into the database.
+
+Users are only inserted if the users table is empty, making the script idempotent."""
 
 import json
 import os
@@ -8,14 +8,14 @@ from pathlib import Path
 
 import smbclient
 from dotenv import load_dotenv
-from sqlalchemy.orm import Session
-from sqlmodel import SQLModel
+from sqlmodel import Session, select
 
-from src.db import get_engine
+from src.db import PhenobaseEnv, get_engine
 from src.models import User
 from src.nas_helper import Password as NasPw
 from src.nas_helper import User as NasUser
 from src.nas_helper import build_unc_path, connect_to_nas
+from src.scripts.script_utils import confirm_production
 
 load_dotenv()
 # Real users data, that can be used for testing
@@ -35,18 +35,18 @@ def load_users_from_nas() -> list[dict]:
 
 
 if __name__ == "__main__":
-    phenobase_environment = os.getenv("PHENOBASE_ENV")
-    if phenobase_environment != "test":
-        raise ValueError("This script should only be run in the test environment.")
+    phenobase_environment = PhenobaseEnv(os.getenv("PHENOBASE_ENV"))
+    if phenobase_environment == PhenobaseEnv.PRODUCTION:
+        confirm_production()
 
     users_data = load_users_from_nas()
-    phenobase_engine = get_engine()
+    engine = get_engine()
 
-    User.__table__.drop(
-        phenobase_engine, checkfirst=True
-    )  # Drop the users table if it exists
-    SQLModel.metadata.create_all(phenobase_engine)  # Recreare all tables
-
-    with Session(phenobase_engine) as session:
+    with Session(engine) as session:
+        table_has_users = session.exec(select(User.id)).first() is not None
+        if table_has_users:
+            print("Users table is not empty, skipping insert.")
+            raise SystemExit("Aborted.")
         session.add_all([User(**user) for user in users_data])
         session.commit()
+        print(f"Inserted {len(users_data)} users.")
