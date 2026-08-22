@@ -10,10 +10,10 @@ from sqlmodel import Session
 
 from src.api import Role
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
+from src.db_utils import get_db_table_as_df
 from src.data_upload import (
     UploadTables,
     append_user_ids,
-    export_db_table_to_csv,
     read_upload_file,
     validate_file_content,
     validate_uploaded_file,
@@ -76,6 +76,22 @@ def api_key_hash_pair() -> APIKeyHashRead:
     """
     return generate_api_key_hash_pair()
 
+@app.get("/data/{table_name}")
+def get_table_data(
+    table_name: UploadTables,
+    current_user: Annotated[UserRead, Depends(allow_roles(Role.reader, Role.writer, Role.admin))],
+    session: Annotated[Session, Depends(get_db_session)],
+):
+    """**Get table data:**
+    Returns the data from the specified table in CSV format.
+    Requires at least reader privileges.
+    """
+    df = get_db_table_as_df(session=session, table_name=table_name)
+    return Response(
+        content =df.to_json(orient="records"),
+        media_type="application/json",
+    )
+
 
 @app.post("/data/upload/{table_name}")
 def upload_file(
@@ -92,14 +108,20 @@ def upload_file(
     """
     validate_uploaded_file(upload_file=upload_file, table_name=table_name)
     df = read_upload_file(upload_file=upload_file).pipe(
-        append_user_ids, current_user_id=current_user.id
+        append_user_ids, 
+        current_user_id=current_user.id, 
+        current_user=current_user.firstname + " " + current_user.lastname
     )
+
+    
 
     validated_rows = validate_file_content(df=df, table_name=table_name)
     write_to_database(session=session, table_name=table_name, rows=validated_rows)
-    table_csv = export_db_table_to_csv(session=session, table_name=table_name)
-
-    write_file_to_nas(table_name=table_name, data=table_csv.encode("utf-8"))
+    
+    #Write the uploaded file to NAS for logging
+    upload_csv = df.to_csv(index=False, encoding="utf-8")
+    write_file_to_nas(table_name=table_name, data=upload_csv.encode("utf-8"))
+    
 
     return Response(
         content=f"File {upload_file.filename} uploaded successfully to Data Platform",

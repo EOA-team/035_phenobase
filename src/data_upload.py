@@ -99,11 +99,12 @@ def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
     return df
 
 
-def append_user_ids(df: pd.DataFrame, current_user_id: int) -> pd.DataFrame:
+def append_user_ids(df: pd.DataFrame, current_user_id: int, current_user: str) -> pd.DataFrame:
     """Append user IDs to the DataFrame based on the table name.
     The pydantic row models will use creato_id on insert and updater_id on update, so we add both here."""
     df["creator_id"] = current_user_id
     df["updater_id"] = current_user_id
+    df["user"] = current_user
     return df
 
 
@@ -181,13 +182,6 @@ def write_file_to_nas(table_name: UploadTables, data: bytes) -> None:
         f.write(data)
 
 
-def export_db_table_to_csv(session: Session, table_name: UploadTables) -> str:
-    """Export a database table to a CSV file."""
-    sql_table = UPLOAD_SCHEMA_REGISTRY.get(UploadTables(table_name)).table
-    rows = session.exec(select(sql_table)).all()
-    df = pd.DataFrame([row.model_dump() for row in rows])
-    csv_file = df.to_csv(index=False, encoding="utf-8")
-    return csv_file
 
 
 def write_to_database(
