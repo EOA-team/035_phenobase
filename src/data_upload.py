@@ -1,11 +1,14 @@
+import pandas as pd
 import os
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 
 import smbclient
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException, UploadFile, status
+from pydantic import RootModel, ValidationError, TypeAdapter
 
+from src.models import CropTypeDelete, CropTypeInsert, CropTypeUpdate
 from src.nas_helper import (
     Password as NasPw,
 )
@@ -39,6 +42,13 @@ TABLE_FILETYPE_MAPPING = {
     UploadTables.CROP_PLOT: FileType.GEOJSON,
 }
 
+CropTypeUploadRow = RootModel[CropTypeInsert | CropTypeUpdate | CropTypeDelete]
+
+# Mapping each UploadTable to its corresponding Pydantic model for validation
+UPLOAD_SCHEMA_REGISTRY: dict[UploadTables, type[RootModel]] = {
+    UploadTables.CROP_TYPE: CropTypeUploadRow,
+}
+
 
 def build_nas_upload_filename(table_name: UploadTables) -> str:
     """Build a filename for uploading to the NAS
@@ -55,7 +65,10 @@ def get_supported_filetype(table_name: UploadTables) -> FileType:
     return TABLE_FILETYPE_MAPPING.get(table_name)
 
 
-def validate_input_file(table_name: UploadTables, upload_file: UploadFile) -> None:
+def validate_input_file(
+    table_name: UploadTables,
+    upload_file: UploadFile,
+) -> None:
     """Validate the input file for uploading to the Data Platform."""
     supported_table_names = tuple(UploadTables.value for UploadTables in UploadTables)
     supported_filetype = get_supported_filetype(UploadTables(table_name))
@@ -70,7 +83,46 @@ def validate_input_file(table_name: UploadTables, upload_file: UploadFile) -> No
             detail=f"Invalid file format *.{filetype} for table '{table_name}'."
             f"Spported file format:*.{supported_filetype.value}",
         )
+    validation_schema = UPLOAD_SCHEMA_REGISTRY.get(UploadTables(table_name))
+    if not validation_schema:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No validation schema found for table '{table_name}'",
+        )
 
+    errors = []
+ 
+    try:
+        df = pd.read_csv(
+            upload_file.file, 
+            sep= None, # Pandas auto sniffs the separator
+            engine="python",
+            encoding="utf-8-sig", #automatically remove Excel BOM artifacts safely
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to parse CSV file: {str(e)}",
+        )
+    finally:
+        upload_file.file.seek(0)  # Reset file pointer to the beginning for re-reading
+
+    list_adapter = TypeAdapter(list[validation_schema])
+
+    upload_file.file.seek(0)  # Reset file pointer to the beginning for re-reading
+
+
+    try :
+        list_adapter.validate_python(df.to_dict(orient="records"))
+    except ValidationError as batch_error:
+        for err in batch_error.errors(include_url=False, include_context=False):
+            row_index = err.get("loc", [None])[0]
+            errors.append(
+                {
+                    "line": row_index + 2,  # +2 to account for header and 0-indexing
+                    "errors": err.get("msg", "Unknown validation error"),
+                }
+            )
 
 def upload_file_to_nas(table_name: UploadTables, upload_file: UploadFile) -> None:
     """Upload a file to the NAS"""
