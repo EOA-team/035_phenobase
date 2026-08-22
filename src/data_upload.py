@@ -141,12 +141,12 @@ def validate_file_content(
     errors = []
     validated = []
 
-    row_adapter = TypeAdapter(validation_schema)
+    row_adapter = TypeAdapter(validation_schema.row_model)
 
     records = df.to_dict(orient="records")
     for index, record in enumerate(records):
         try:
-            validated.append(row_adapter.validate_python([record]))
+            validated.append(row_adapter.validate_python(record))
 
         except ValidationError as row_error:
             line = index + 2  # +2 to account for header and 0-indexing

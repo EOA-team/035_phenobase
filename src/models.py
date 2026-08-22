@@ -68,7 +68,7 @@ class CropTypeBase(BaseModel):
     doc_path: str = Field(sa_type=TEXT)
 
 
-class CropType(SQLModel, CropTypeBasetable=True):
+class CropType(SQLModel, CropTypeBase, table=True):
     """SQLModel model for the crop_type table."""
 
     __tablename__ = "crop_types"
@@ -97,6 +97,7 @@ class CropTypeInsert(CropTypeBase):
 
     mode: Literal[UploadModes.INSERT] = UploadModes.INSERT
     creator_id: int
+    updater_id: int
 
 
 class CropTypeUpdate(CropTypeBase):

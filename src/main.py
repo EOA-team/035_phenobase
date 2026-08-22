@@ -91,10 +91,8 @@ def upload_file(
     Requires writer privileges.
     """
     validate_uploaded_file(upload_file=upload_file, table_name=table_name)
-    df = (
-        read_upload_file(upload_file=upload_file)
-        .pipe(append_user_ids, current_user_id=current_user.id)
-        .pipe(validate_uploaded_file, table_name=table_name)
+    df = read_upload_file(upload_file=upload_file).pipe(
+        append_user_ids, current_user_id=current_user.id
     )
 
     validated_rows = validate_file_content(df=df, table_name=table_name)
