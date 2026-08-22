@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel
@@ -7,11 +8,10 @@ from sqlmodel import TEXT, Field, SQLModel
 
 from src.api import Role, Status
 from src.time_utils import utc_now
-from enum import StrEnum
-
 
 # Base models for insert, update, and delete
 ############################################
+
 
 class UploadModes(StrEnum):
     """Phenobase API supported modes for Upload"""
@@ -19,6 +19,7 @@ class UploadModes(StrEnum):
     INSERT = "insert"
     UPDATE = "update"
     DELETE = "delete"
+
 
 class Insert(BaseModel):
     """SQLModel model for Inserts"""

@@ -1,12 +1,12 @@
-import pandas as pd
 import os
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 
+import pandas as pd
 import smbclient
 from fastapi import HTTPException, UploadFile, status
-from pydantic import RootModel, ValidationError, TypeAdapter
+from pydantic import RootModel, TypeAdapter, ValidationError
 
 from src.models import CropTypeDelete, CropTypeInsert, CropTypeUpdate
 from src.nas_helper import (
@@ -91,38 +91,39 @@ def validate_input_file(
         )
 
     errors = []
- 
-    try:
-        df = pd.read_csv(
-            upload_file.file, 
-            sep= None, # Pandas auto sniffs the separator
-            engine="python",
-            encoding="utf-8-sig", #automatically remove Excel BOM artifacts safely
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to parse CSV file: {str(e)}",
-        )
-    finally:
-        upload_file.file.seek(0)  # Reset file pointer to the beginning for re-reading
 
-    list_adapter = TypeAdapter(list[validation_schema])
+    df = pd.read_csv(
+        upload_file.file,
+        sep=None,  # Pandas auto sniffs the separator
+        engine="python",
+        encoding="utf-8-sig",  # automatically remove Excel BOM artifacts safely
+    )
 
     upload_file.file.seek(0)  # Reset file pointer to the beginning for re-reading
 
+    row_adapter = TypeAdapter(list[validation_schema])
 
-    try :
-        list_adapter.validate_python(df.to_dict(orient="records"))
-    except ValidationError as batch_error:
-        for err in batch_error.errors(include_url=False, include_context=False):
-            row_index = err.get("loc", [None])[0]
-            errors.append(
-                {
-                    "line": row_index + 2,  # +2 to account for header and 0-indexing
-                    "errors": err.get("msg", "Unknown validation error"),
-                }
-            )
+    errors = []
+    records = df.to_dict(orient="records")
+    for index, record in enumerate(records):
+        try:
+            row_adapter.validate_python([record])
+        except ValidationError as row_error:
+            line = index + 2  # +2 to account for header and 0-indexing
+            for err in row_error.errors(include_url=False, include_context=False):
+                errors.append(
+                    {
+                        "type": err.get("type", "value_error"),
+                        "loc": ("line", line, *err.get("loc", ())),
+                        "msg": err.get("msg", "Unknown validation error"),
+                        "input": record,
+                    }
+                )
+    if errors:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=errors
+        )
+
 
 def upload_file_to_nas(table_name: UploadTables, upload_file: UploadFile) -> None:
     """Upload a file to the NAS"""

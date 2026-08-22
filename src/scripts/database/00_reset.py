@@ -16,7 +16,9 @@ load_dotenv()
 def reset_database() -> None:
     """Drop and recreate all tables defined in the SQLModel metadata."""
     engine = get_engine()
-    SQLModel.metadata.drop_all(engine, )
+    SQLModel.metadata.drop_all(
+        engine,
+    )
     SQLModel.metadata.create_all(engine)
     print("Database reset: all tables dropped and recreated.")
 
