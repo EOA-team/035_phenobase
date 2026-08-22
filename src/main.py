@@ -2,38 +2,17 @@
 Docstring for src.main
 """
 
-import os
-from pathlib import Path
 from typing import Annotated
 
-import smbclient
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Response, UploadFile
+from fastapi import Depends, FastAPI, UploadFile, Response
 
 from src.api import Role
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
-from src.data_upload import (
-    Tables,
-    build_nas_upload_filename,
-    get_supported_filetype,
-)
+from src.data_upload import UploadTables, upload_file_to_nas, validate_input_file
 from src.models import APIKeyHashRead, UserRead
-from src.nas_helper import (
-    Password as NasPw,
-)
-from src.nas_helper import (
-    User as NasUser,
-)
-from src.nas_helper import (
-    build_unc_path,
-    connect_to_nas,
-)
 
 load_dotenv()
-
-
-UPLOAD_FOLDER = r"drone\phenobase\production\uploads"
-
 
 app = FastAPI(
     title="Phenobase API",
@@ -88,41 +67,21 @@ def api_key_hash_pair() -> APIKeyHashRead:
 
 
 @app.post("/data/upload/{table_name}")
-def upload_csv_to_nas(
-    table_name: str,
+def upload_file(
+    table_name: UploadTables,
     upload_file: UploadFile,
     current_user: Annotated[UserRead, Depends(allow_roles(Role.writer))],
 ):
     """**Upload data:**
-    Uploads data to the specified table.
-    Requires admin privileges.
+    Uploads data to the specified table in Database
+    and saves the uploaded files to the NAS for Logging.
+
+    Requires writer privileges.
     """
-
-    supported_table_names = tuple(Tables.value for Tables in Tables)
-    supported_filetype = get_supported_filetype(Tables(table_name))
-
-    filetype = upload_file.filename.split(".")[-1]
-
-    if table_name not in supported_table_names:
-        raise HTTPException(status_code=400, detail=f"Invalid table name: {table_name}")
-    if not upload_file.filename.endswith(supported_filetype.value):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file format *.{filetype} for table '{table_name}'."
-            f"Spported file format:*.{supported_filetype.value}",
-        )
-
-    upload_path = build_unc_path(
-        hostname=os.getenv("NAS_RECKENHOLZ"), share="Data-EODrone", folder=UPLOAD_FOLDER
-    )
-    filename = build_nas_upload_filename(Tables(table_name))
-    upload_file_path = Path(upload_path) / filename
-
-    connect_to_nas(user_type=NasUser.SERVICE, password=NasPw.SERVICE)
-    with smbclient.open_file(upload_file_path, "wb", encoding="utf-8") as f:
-        f.write(upload_file.file.read())
+    validate_input_file(table_name, upload_file)
+    upload_file_to_nas(table_name, upload_file)
 
     return Response(
-        content=f"File {upload_file.filename} uploaded successfully to NAS ",
+        content=f"File {upload_file.filename} uploaded successfully to Data Platform",
         status_code=200,
     )
