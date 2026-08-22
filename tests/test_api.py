@@ -51,10 +51,26 @@ def test_auth_me_valid(phenobase_db_minimal):
 
 
 @pytest.mark.integration_test
-def test_auth_me_invalid():
+def test_auth_me_invalid(phenobase_db_minimal):
     """Test the /auth/me endpoint with an invalid API key."""
     client = TestClient(app)
     headers = {"X-API-Key": "a_wrong_api_key"}
     response = client.get("/auth/me", headers=headers)
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid API key"}
+
+
+@pytest.mark.integration_test
+def test_generate_api_key(phenobase_db_minimal):
+    """Test the /admin/generate-api-key endpoint."""
+    client = TestClient(app)
+    headers = {"X-API-Key": os.getenv("SABRINA_SCHINDLER_API_KEY")}
+    response = client.get("/admin/generate-api-key", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["api_key"] is not None
+    assert data["key_hash"] is not None
+
+    headers = {"X-API-Key": os.getenv("MAX_MUSTERMANN_API_KEY")}
+    response = client.get("/admin/generate-api-key", headers=headers)
+    assert response.status_code == 403

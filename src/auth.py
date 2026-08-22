@@ -1,6 +1,7 @@
 """Authentication for the Phenobase API"""
 
 import hashlib
+import secrets
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException
@@ -8,7 +9,7 @@ from sqlmodel import Session, select
 
 from src.api import Role
 from src.db import get_db_session
-from src.models import User
+from src.models import APIKeyHashRead, User
 
 
 def get_api_key(api_key: str | None = Header(default=None, alias="X-API-Key")) -> str:
@@ -39,15 +40,28 @@ def get_current_user(
     return user
 
 
-def require_roles(*allowed_roles: Role):
-    """Factory function: returns function that checks if the current user has one of the allowed roles."""
+def allow_roles(*role: Role):
+    """Factory function: returns function that returns the
+    current user if they have one of the specified roles."""
 
-    def _dependency(current_user: Annotated[User, Depends(get_current_user)]):
-        if current_user.role not in allowed_roles:
+    def validate_user_role(
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> User:
+        if current_user.role not in role:
             raise HTTPException(
                 status_code=403,
-                detail=f"Insufficient permissions, {current_user.role} role not in {allowed_roles}",
+                detail=f"Insufficient permissions, {current_user.role} role not in {role}",
             )
         return current_user
 
-    return _dependency
+    return validate_user_role
+
+
+def generate_api_key_hash_pair() -> APIKeyHashRead:
+    """**Generate API key:**
+    Generates a new API key and its SHA-256 hash.
+    Requires admin privileges.
+    """
+    api_key = secrets.token_urlsafe(32)
+    key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+    return APIKeyHashRead(api_key=api_key, key_hash=key_hash)

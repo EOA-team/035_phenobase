@@ -1,5 +1,5 @@
-from sqlmodel import Field, SQLModel
 from pydantic import BaseModel
+from sqlmodel import Field, SQLModel
 
 from src.api import Role, Status
 
@@ -30,3 +30,10 @@ class UserRead(BaseModel):
     email: str
     # Note: key_hash is intentionally omitted for security reasons.
     # Note: id is intentionally omitted as it is not needed for reading user data.
+
+
+class APIKeyHashRead(BaseModel):
+    """Response model for reading API key and hash data via API."""
+
+    api_key: str
+    key_hash: str

@@ -7,6 +7,8 @@ class Role(StrEnum):
     admin = "admin"
     reader = "reader"
     writer = "writer"
+
+
 class Status(StrEnum):
     """Currently supported user statuses."""
 

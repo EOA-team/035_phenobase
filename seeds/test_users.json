@@ -18,6 +18,15 @@
     "key_hash": "c230c56cabe65e1dbdc0776ecddf8611b0b031b8b8a2af738e30b2cc0435593b"
   },
   {
+    "f_account": "F34567812",
+    "firstname": "Sabrina ",
+    "lastname": "Schindler",
+    "status": "active",
+    "role": "admin",
+    "email": "sabrina.schindler@example.com",
+    "key_hash": "38313d4b5511623cc8245c5209bfe2412e0695d238c9b30b1a13ddf3cf5d7137"
+  },
+  {
     "firstname": "Seline ",
     "lastname": "Musterfrau",
     "status": "inactive",
