@@ -5,12 +5,23 @@ Docstring for src.main
 from typing import Annotated
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Response, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, Response, UploadFile
+from sqlmodel import Session
 
 from src.api import Role
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
-from src.data_upload import UploadTables, validate_uploaded_file, read_upload_file, append_user_ids, upload_file_to_nas, validate_file_content
-from src.models import APIKeyHashRead, UserRead
+from src.data_upload import (
+    UploadTables,
+    append_user_ids,
+    read_upload_file,
+    upload_file_to_nas,
+    validate_file_content,
+    validate_uploaded_file,
+    write_to_database
+)
+
+from src.db import get_db_session
+from src.models import APIKeyHashRead, User, UserRead
 
 load_dotenv()
 
@@ -71,6 +82,7 @@ def upload_file(
     table_name: UploadTables,
     upload_file: UploadFile,
     current_user: Annotated[UserRead, Depends(allow_roles(Role.writer))],
+    session: Annotated[Session, Depends(get_db_session)],
 ):
     """**Upload data:**
     Uploads data to the specified table in Database
@@ -85,9 +97,15 @@ def upload_file(
         .pipe(validate_uploaded_file, table_name=table_name)
     )
 
-    validated_data = validate_file_content(df=df, table_name=table_name)
-    
-    
+    validated_rows = validate_file_content(df=df, table_name=table_name)
+    write_to_database(
+        session=session, 
+        table_name=table_name,
+        rows=validated_rows
+    )
+
+
+
     upload_file_to_nas(upload_file=upload_file, table_name=table_name)
 
     print(df.head())  # Debugging: print the first few rows of the DataFrame

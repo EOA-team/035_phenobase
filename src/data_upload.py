@@ -1,6 +1,6 @@
 import os
 from datetime import UTC, datetime
-from dataclass import dataclass
+from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from types import UnionType
@@ -8,7 +8,7 @@ import pandas as pd
 import smbclient
 from fastapi import HTTPException, UploadFile, status
 from pydantic import BaseModel, TypeAdapter, ValidationError
-from sqlmodel import Session, table
+from sqlmodel import Session
 
 from src.models import CropType, CropTypeDelete, CropTypeInsert, CropTypeUpdate, UploadModes
 from src.nas_helper import (
@@ -17,6 +17,7 @@ from src.nas_helper import (
 from src.nas_helper import (
     User as NasUser,
 )
+
 from src.nas_helper import (
     build_unc_path,
     connect_to_nas,
@@ -88,7 +89,8 @@ def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
     return df
 
 def append_user_ids(df : pd.DataFrame, current_user_id: int) -> pd.DataFrame:
-    """Append user IDs to the DataFrame based on the table name."""
+    """Append user IDs to the DataFrame based on the table name.
+    The pydantic row models will use creato_id on insert and updater_id on update, so we add both here."""
     df["creator_id"] = current_user_id
     df["updater_id"] = current_user_id
     return df
