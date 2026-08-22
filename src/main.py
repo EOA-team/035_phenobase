@@ -5,7 +5,7 @@ Docstring for src.main
 from typing import Annotated
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Response, UploadFile
+from fastapi import Depends, FastAPI, Response, UploadFile
 from sqlmodel import Session
 
 from src.api import Role
@@ -17,11 +17,10 @@ from src.data_upload import (
     upload_file_to_nas,
     validate_file_content,
     validate_uploaded_file,
-    write_to_database
+    write_to_database,
 )
-
 from src.db import get_db_session
-from src.models import APIKeyHashRead, User, UserRead
+from src.models import APIKeyHashRead, UserRead
 
 load_dotenv()
 
@@ -91,25 +90,18 @@ def upload_file(
     Requires writer privileges.
     """
     validate_uploaded_file(upload_file=upload_file, table_name=table_name)
-    df =(
+    df = (
         read_upload_file(upload_file=upload_file)
         .pipe(append_user_ids, current_user_id=current_user.id)
         .pipe(validate_uploaded_file, table_name=table_name)
     )
 
     validated_rows = validate_file_content(df=df, table_name=table_name)
-    write_to_database(
-        session=session, 
-        table_name=table_name,
-        rows=validated_rows
-    )
-
-
+    write_to_database(session=session, table_name=table_name, rows=validated_rows)
 
     upload_file_to_nas(upload_file=upload_file, table_name=table_name)
 
     print(df.head())  # Debugging: print the first few rows of the DataFrame
-
 
     return Response(
         content=f"File {upload_file.filename} uploaded successfully to Data Platform",
