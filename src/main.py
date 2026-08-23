@@ -11,7 +11,6 @@ from sqlmodel import Session
 from src.api import Role
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
 from src.data_upload import (
-    UploadTables,
     append_user_ids,
     read_upload_file,
     validate_file_content,
@@ -20,8 +19,8 @@ from src.data_upload import (
     write_to_database,
 )
 from src.db import get_db_session
-from src.db_utils import get_db_table_as_df
-from src.models import APIKeyHashRead, UserRead
+from src.db_utils import get_db_table_as_rows
+from src.models import APIKeyHashRead, UploadTables, UserRead
 
 load_dotenv()
 
@@ -86,14 +85,11 @@ def get_table_data(
     session: Annotated[Session, Depends(get_db_session)],
 ):
     """**Get table data:**
-    Returns the data from the specified table in CSV format.
+    Returns the rows of the specified table as a flat list of records.
+    The response schema is resolved at runtime based on the table name.
     Requires at least reader privileges.
     """
-    df = get_db_table_as_df(session=session, table_name=table_name)
-    return Response(
-        content=df.to_json(orient="records"),
-        media_type="application/json",
-    )
+    return get_db_table_as_rows(session=session, table_name=table_name)
 
 
 @app.post("/data/upload/{table_name}")

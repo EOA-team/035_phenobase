@@ -1,9 +1,7 @@
 import os
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from types import UnionType
 
 import pandas as pd
 import smbclient
@@ -17,7 +15,11 @@ from src.models import (
     CropTypeDelete,
     CropTypeInsert,
     CropTypeUpdate,
+    FileType,
+    SCHEMA_REGISTRY,
+    TableSchema,
     UploadModes,
+    UploadTables,
 )
 from src.nas_helper import (
     Password as NasPw,
@@ -33,62 +35,13 @@ from src.nas_helper import (
 NAS_UPLOAD_FOLDER = r"drone\phenobase\production\uploads"
 
 
-class FileType(StrEnum):
-    """Phenobase API supported file types."""
-
-    CSV = "csv"
-    GEOJSON = "geojson"
-
-
-class UploadTables(StrEnum):
-    """Phenobase API supported tables for Upload"""
-
-    CROP_TYPE = "crop_type"
-    CROP_PLOT = "crop_plot"
-
-
-@dataclass(frozen=True)
-class UploadSchema:
-    """Configuration for one uploadable table.
-
-    row_model:    Pydantic Basemodel (or union of insert/update/delete models) used to
-                  validate each uploaded record.
-    table_model:  SQLModel class (declared with table=True) the validated records
-                  are written to.
-    filetype:     File format the API accepts for this table.
-    """
-
-    row_model: type[BaseModel] | UnionType
-    table_model: type[SQLModel]
-    filetype: FileType
-
-    def __post_init__(self) -> None:
-        # SQLAlchemy attaches __table__ only to classes declared with table=True,
-        # so this guards against accidentally registering a non-table model.
-        if getattr(self.table_model, "__table__", None) is None:
-            raise TypeError(
-                f"{self.table_model.__name__} is not a SQLModel table "
-                f"(missing table=True / __table__)."
-            )
-
-
-# Configuration for each uploadable table: row model(s), target table, and accepted filetype.
-UPLOAD_SCHEMA_REGISTRY: dict[UploadTables, UploadSchema] = {
-    UploadTables.CROP_TYPE: UploadSchema(
-        row_model=CropTypeInsert | CropTypeUpdate | CropTypeDelete,
-        table_model=CropType,
-        filetype=FileType.CSV,
-    ),
-}
-
-
 def build_nas_upload_filename(table_name: UploadTables) -> str:
     """Build a filename for uploading to the NAS
     based on the current timestamp (UTC), table name, and file type."""
     now = datetime.now(tz=UTC)
     date_part = now.strftime("%Y%m%d_%H%M%S")  # 20260822_185612
     ms = now.microsecond // 1000  # microseconds -> milliseconds (0-999)
-    filetype = UPLOAD_SCHEMA_REGISTRY[table_name].filetype
+    filetype = SCHEMA_REGISTRY[table_name].filetype
     return f"{date_part}_{ms:03d}_{table_name}.{filetype.value}"
 
 
@@ -124,7 +77,7 @@ def append_user_ids(
 
 def validate_uploaded_file(table_name: UploadTables, upload_file: UploadFile) -> None:
     """Validate the input file for uploading to the Data Platform."""
-    schema = UPLOAD_SCHEMA_REGISTRY.get(table_name)
+    schema = SCHEMA_REGISTRY.get(table_name)
     if schema is None:
         raise HTTPException(
             status_code=400, detail=f"Unsupported table for upload: {table_name}"
@@ -143,10 +96,10 @@ def validate_file_content(
     df: pd.DataFrame, table_name: UploadTables
 ) -> list[BaseModel]:
     """Validate the data in the DataFrame against the corresponding Pydantic row model.
-    The row model is determined based on the table name using the UPLOAD_SCHEMA_REGISTRY.
+    The row model is determined based on the table name using the SCHEMA_REGISTRY.
     """
 
-    validation_schema = UPLOAD_SCHEMA_REGISTRY.get(UploadTables(table_name))
+    validation_schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
     if not validation_schema:
         raise HTTPException(
             status_code=400,
@@ -203,14 +156,14 @@ def write_to_database(
 ) -> None:
     """Write validated rows to the database as insert/update/delete.
 
-    Works for any table registered in UPLOAD_SCHEMA_REGISTRY: the target
+    Works for any table registered in SCHEMA_REGISTRY: the target
     table class comes from the registry, and each row model carries its
     own fields, so model_dump() always produces valid column values.
 
     All rows are applied within one session; a single commit at the end
     makes the whole file atomic: either every row lands or none does.
     """
-    table = UPLOAD_SCHEMA_REGISTRY[table_name].table_model
+    table = SCHEMA_REGISTRY[table_name].table_model
 
     for row in rows:
         mode = row.mode  # every Insert/Update/Delete model has one
