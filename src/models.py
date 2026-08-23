@@ -205,11 +205,11 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
             "name",
             "code",
             "description",
-            "doc_path",
             "creator_id",
             "created_at",
             "updater_id",
             "updated_at",
+            "doc_path",
         ],
     ),
 }
