@@ -1,6 +1,7 @@
 import pandas as pd
 from sqlmodel import Session, select
-from src.data_upload import UploadTables, UPLOAD_SCHEMA_REGISTRY
+
+from src.data_upload import UPLOAD_SCHEMA_REGISTRY, UploadTables
 
 
 def get_db_table_as_df(session: Session, table_name: UploadTables) -> pd.DataFrame:

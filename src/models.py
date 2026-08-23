@@ -45,13 +45,18 @@ class Delete(BaseModel):
 
 
 ############################################
-class User(SQLModel, table=True):
-    """SQLModel model for the users table."""
+
+
+class AutoIncrementBase(SQLModel):
+    """Base SQL model for auto-incrementing primary key."""
+
+    id: int | None = Field(default=None, primary_key=True)
+
+
+class User(AutoIncrementBase, table=True):
+    """Base SQLModel model for the users table."""
 
     __tablename__ = "users"
-    id: int | None = Field(
-        default=None, primary_key=True
-    )  # Auto-incrementing primary key
     f_account: str | None = Field(default=None, max_length=32, unique=True)
     firstname: str = Field(max_length=255)
     lastname: str = Field(max_length=255)
@@ -61,20 +66,9 @@ class User(SQLModel, table=True):
     key_hash: str | None = Field(default=None, max_length=64, unique=True)
 
 
-class CropTypeBase(BaseModel):
-    name: str = Field(max_length=255)
-    code: str = Field(max_length=32, unique=True)
-    description: str = Field(sa_type=TEXT)
-    doc_path: str = Field(sa_type=TEXT)
+class DataLineageBase(SQLModel):
+    """Base SQL model for data lineage information."""
 
-
-class CropType(SQLModel, CropTypeBase, table=True):
-    """SQLModel model for the crop_type table."""
-
-    __tablename__ = "crop_types"
-    id: int | None = Field(
-        default=None, primary_key=True
-    )  # Auto-incrementing primary key
     creator_id: int = Field(foreign_key="users.id")
     created_at: datetime | None = Field(
         default_factory=utc_now,
@@ -92,10 +86,25 @@ class CropType(SQLModel, CropTypeBase, table=True):
     )
 
 
+class CropTypeBase(SQLModel):
+    """Base SQL model for the crop_type table"""
+
+    name: str = Field(max_length=255)
+    code: str = Field(max_length=32, unique=True)
+    description: str = Field(sa_type=TEXT)
+    doc_path: str = Field(sa_type=TEXT)
+
+
+class CropType(AutoIncrementBase, DataLineageBase,CropTypeBase, table=True):
+    """SQLModel model for the crop_type table."""
+
+    __tablename__ = "crop_types"
+
+
 class CropTypeInsert(CropTypeBase):
     """For inserting the id is not needed, as it will be auto-generated."""
 
-    mode: Literal[UploadModes.INSERT] 
+    mode: Literal[UploadModes.INSERT]
     creator_id: int
     updater_id: int
 
@@ -103,7 +112,7 @@ class CropTypeInsert(CropTypeBase):
 class CropTypeUpdate(CropTypeBase):
     """For updating only the updater_id is needed."""
 
-    mode: Literal[UploadModes.UPDATE] 
+    mode: Literal[UploadModes.UPDATE]
     id: int
     updater_id: int
 
@@ -111,7 +120,7 @@ class CropTypeUpdate(CropTypeBase):
 class CropTypeDelete(BaseModel):
     """For deleting a CropType, only the id is needed."""
 
-    mode: Literal[UploadModes.DELETE] 
+    mode: Literal[UploadModes.DELETE]
     id: int
 
 

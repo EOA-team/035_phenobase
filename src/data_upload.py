@@ -9,7 +9,7 @@ import pandas as pd
 import smbclient
 from fastapi import HTTPException, UploadFile, status
 from pydantic import BaseModel, TypeAdapter, ValidationError
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from src.models import (
     CropType,
@@ -95,9 +95,9 @@ def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
         encoding="utf-8-sig",  # automatically remove Excel BOM artifacts safely
     )
 
-    #Basic Clearning
-    raw_df.columns = raw_df.columns.str.lower()  
-    raw_df.columns = raw_df.columns.str.strip()  
+    # Basic Clearning
+    raw_df.columns = raw_df.columns.str.lower()
+    raw_df.columns = raw_df.columns.str.strip()
     # Replace pandas NA and NaN with None for consistency
     df = raw_df.replace({pd.NA: None, float("nan"): None})
 
@@ -105,7 +105,9 @@ def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
     return df
 
 
-def append_user_ids(df: pd.DataFrame, current_user_id: int, current_user: str) -> pd.DataFrame:
+def append_user_ids(
+    df: pd.DataFrame, current_user_id: int, current_user: str
+) -> pd.DataFrame:
     """Append user IDs to the DataFrame based on the table name.
     The pydantic row models will use creato_id on insert and updater_id on update, so we add both here."""
     df["creator_id"] = current_user_id
@@ -186,8 +188,6 @@ def write_file_to_nas(table_name: UploadTables, data: bytes) -> None:
     connect_to_nas(user_type=NasUser.SERVICE, password=NasPw.SERVICE)
     with smbclient.open_file(upload_file_path, "wb", encoding="utf-8") as f:
         f.write(data)
-
-
 
 
 def write_to_database(
