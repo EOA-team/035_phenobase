@@ -1,6 +1,5 @@
 import os
 from datetime import UTC, datetime
-from enum import StrEnum
 from pathlib import Path
 
 import pandas as pd
@@ -8,16 +7,10 @@ import smbclient
 from fastapi import HTTPException, UploadFile, status
 from pydantic import BaseModel, TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session
 
 from src.models import (
-    CropType,
-    CropTypeDelete,
-    CropTypeInsert,
-    CropTypeUpdate,
-    FileType,
     SCHEMA_REGISTRY,
-    TableSchema,
     UploadModes,
     UploadTables,
 )

@@ -76,12 +76,12 @@ def api_key_hash_pair() -> APIKeyHashRead:
     return generate_api_key_hash_pair()
 
 
-@app.get("/data/{table_name}")
+@app.get(
+    "/data/{table_name}",
+    dependencies=[Depends(allow_roles(Role.reader, Role.writer, Role.admin))],
+)
 def get_table_data(
     table_name: UploadTables,
-    current_user: Annotated[
-        UserRead, Depends(allow_roles(Role.reader, Role.writer, Role.admin))
-    ],
     session: Annotated[Session, Depends(get_db_session)],
 ):
     """**Get table data:**
