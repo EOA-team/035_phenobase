@@ -10,7 +10,7 @@ import smbclient
 from fastapi import HTTPException, UploadFile, status
 from pydantic import BaseModel, TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session
+from sqlmodel import Session, SQLModel
 
 from src.models import (
     CropType,
@@ -49,25 +49,35 @@ class UploadTables(StrEnum):
 
 @dataclass(frozen=True)
 class UploadSchema:
-    """
-    row_model: The Pydantic model used for validating each row of the uploaded file.
-    table: The SQLModel table class the validated rows are written to.
+    """Configuration for one uploadable table.
+
+    row_model:    Pydantic model (or union of insert/update/delete models) used to
+                  validate each uploaded record.
+    table_model:  SQLModel class (declared with table=True) the validated records
+                  are written to.
+    filetype:     File format the API accepts for this table.
     """
 
     row_model: type[BaseModel] | UnionType
-    table: type
+    table_model: type[SQLModel]
+    filetype: FileType
+
+    def __post_init__(self) -> None:
+        # SQLAlchemy attaches __table__ only to classes declared with table=True,
+        # so this guards against accidentally registering a non-table model.
+        if getattr(self.table_model, "__table__", None) is None:
+            raise TypeError(
+                f"{self.table_model.__name__} is not a SQLModel table "
+                f"(missing table=True / __table__)."
+            )
 
 
-TABLE_FILETYPE_MAPPING = {
-    UploadTables.CROP_TYPE: FileType.CSV,
-    UploadTables.CROP_PLOT: FileType.GEOJSON,
-}
-
-
-# Mapping each UploadTable to its corresponding Pydantic model for validation
+# Configuration for each uploadable table: row model(s), target table, and accepted filetype.
 UPLOAD_SCHEMA_REGISTRY: dict[UploadTables, UploadSchema] = {
     UploadTables.CROP_TYPE: UploadSchema(
-        row_model=CropTypeInsert | CropTypeUpdate | CropTypeDelete, table=CropType
+        row_model=CropTypeInsert | CropTypeUpdate | CropTypeDelete,
+        table_model=CropType,
+        filetype=FileType.CSV,
     ),
 }
 
@@ -78,13 +88,8 @@ def build_nas_upload_filename(table_name: UploadTables) -> str:
     now = datetime.now(tz=UTC)
     date_part = now.strftime("%Y%m%d_%H%M%S")  # 20260822_185612
     ms = now.microsecond // 1000  # microseconds -> milliseconds (0-999)
-    filetype = get_supported_filetype(table_name)
+    filetype = UPLOAD_SCHEMA_REGISTRY[table_name].filetype
     return f"{date_part}_{ms:03d}_{table_name}.{filetype.value}"
-
-
-def get_supported_filetype(table_name: UploadTables) -> FileType:
-    """Get the supported file types for a given table."""
-    return TABLE_FILETYPE_MAPPING.get(table_name)
 
 
 def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
@@ -119,18 +124,18 @@ def append_user_ids(
 
 def validate_uploaded_file(table_name: UploadTables, upload_file: UploadFile) -> None:
     """Validate the input file for uploading to the Data Platform."""
-    supported_table_names = tuple(UploadTables.value for UploadTables in UploadTables)
-    supported_filetype = get_supported_filetype(UploadTables(table_name))
+    schema = UPLOAD_SCHEMA_REGISTRY.get(table_name)
+    if schema is None:
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported table for upload: {table_name}"
+        )
 
     filetype = upload_file.filename.split(".")[-1]
-
-    if table_name not in supported_table_names:
-        raise HTTPException(status_code=400, detail=f"Invalid table name: {table_name}")
-    if not upload_file.filename.endswith(supported_filetype.value):
+    if not upload_file.filename.endswith(schema.filetype.value):
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid file format *.{filetype} for table '{table_name}'."
-            f"Spported file format:*.{supported_filetype.value}",
+            detail=f"Invalid file format *.{filetype} for table '{table_name}'. "
+            f"Supported file format: *.{schema.filetype.value}",
         )
 
 
@@ -205,7 +210,7 @@ def write_to_database(
     All rows are applied within one session; a single commit at the end
     makes the whole file atomic: either every row lands or none does.
     """
-    table = UPLOAD_SCHEMA_REGISTRY[table_name].table
+    table = UPLOAD_SCHEMA_REGISTRY[table_name].table_model
 
     for row in rows:
         mode = row.mode  # every Insert/Update/Delete model has one
