@@ -11,4 +11,7 @@ def get_db_table_as_pd(session: Session, table_name: UploadTables) -> pd.DataFra
         raise ValueError(f"Unsupported table: {table_name}")
     query = select(schema.table_model)
     rows = list(session.exec(query).all())
-    return pd.DataFrame([row.model_dump() for row in rows])
+    df = pd.DataFrame([row.model_dump() for row in rows])
+    if schema.read_order is not None:
+        df = df[schema.read_order]
+    return df

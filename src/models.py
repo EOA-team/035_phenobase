@@ -164,6 +164,8 @@ class TableSchema:
                   are written to.
     read_model:   SQLModel class used as the API response model for reading this
                   table.
+    read_order:   Optional explicit column order for reading this table. If None,
+                  the model's natural field order is used.
     filetype:     File format the API accepts for this table.
     """
 
@@ -171,6 +173,7 @@ class TableSchema:
     table_model: type[SQLModel]
     read_model: type[SQLModel]
     filetype: FileType
+    read_order: list[str] | None = None
 
     def __post_init__(self) -> None:
         # SQLAlchemy attaches __table__ only to classes declared with table=True,
@@ -197,5 +200,16 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
         table_model=CropType,
         read_model=CropType,
         filetype=FileType.CSV,
+        read_order=[
+            "id",
+            "name",
+            "code",
+            "description",
+            "doc_path",
+            "creator_id",
+            "created_at",
+            "updater_id",
+            "updated_at",
+        ],
     ),
 }
