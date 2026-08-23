@@ -19,7 +19,7 @@ from src.data_upload import (
     write_to_database,
 )
 from src.db import get_db_session
-from src.db_utils import get_db_table_as_rows
+from src.db_utils import get_db_table_as_pd
 from src.models import APIKeyHashRead, UploadTables, UserRead
 
 load_dotenv()
@@ -85,11 +85,15 @@ def get_table_data(
     session: Annotated[Session, Depends(get_db_session)],
 ):
     """**Get table data:**
-    Returns the rows of the specified table as a flat list of records.
+    Returns the rows of the specified table as CSV.
     The response schema is resolved at runtime based on the table name.
     Requires at least reader privileges.
     """
-    return get_db_table_as_rows(session=session, table_name=table_name)
+    df = get_db_table_as_pd(session=session, table_name=table_name)
+    return Response(
+        content=df.to_csv(index=False, sep=";", encoding="utf-8"),
+        media_type="text/csv",
+    )
 
 
 @app.post("/data/upload/{table_name}")
