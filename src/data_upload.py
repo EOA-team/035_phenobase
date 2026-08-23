@@ -9,6 +9,7 @@ import pandas as pd
 import smbclient
 from fastapi import HTTPException, UploadFile, status
 from pydantic import BaseModel, TypeAdapter, ValidationError
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
 from src.models import (
@@ -233,4 +234,20 @@ def write_to_database(
                 )
             session.delete(existing)
 
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError as err:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Database constraint violation: {_integrity_error_detail(err)}",
+        ) from err
+
+
+def _integrity_error_detail(err: IntegrityError) -> str:
+    diag = getattr(err.orig, "diag", None)
+    primary = getattr(diag, "message_primary", None)
+    detail = getattr(diag, "message_detail", None)
+    if primary and detail:
+        return f"{primary} ({detail})"
+    return detail or primary or str(err.orig)
