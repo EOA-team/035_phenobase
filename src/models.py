@@ -95,7 +95,7 @@ class CropTypeBase(SQLModel):
     doc_path: str = Field(sa_type=TEXT)
 
 
-class CropType(AutoIncrementBase, DataLineageBase,CropTypeBase, table=True):
+class CropType(AutoIncrementBase, DataLineageBase, CropTypeBase, table=True):
     """SQLModel model for the crop_type table."""
 
     __tablename__ = "crop_types"

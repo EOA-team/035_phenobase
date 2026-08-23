@@ -51,7 +51,7 @@ class UploadTables(StrEnum):
 class UploadSchema:
     """Configuration for one uploadable table.
 
-    row_model:    Pydantic model (or union of insert/update/delete models) used to
+    row_model:    Pydantic Basemodel (or union of insert/update/delete models) used to
                   validate each uploaded record.
     table_model:  SQLModel class (declared with table=True) the validated records
                   are written to.
