@@ -24,26 +24,26 @@ class UploadModes(StrEnum):
 
 
 class Insert(BaseModel):
-    """SQLModel model for Inserts"""
+    """Required fields for insert operations."""
 
-    id: int
-    mode: UploadModes.INSERT
+    mode: Literal[UploadModes.INSERT]
     creator_id: int
-
-
-class Update(BaseModel):
-    """SQLModel model for Updates"""
-
-    id: int
-    mode: UploadModes.UPDATE
     updater_id: int
 
 
-class Delete(BaseModel):
-    """SQLModel model for Deletes"""
+class Update(SQLModel):
+    """Required fields for update operations."""
+    
+    id: int
+    mode: Literal[UploadModes.UPDATE]
+    updater_id: int
+
+
+class Delete(SQLModel):
+    """Required fields for delete operations."""
 
     id: int
-    mode: UploadModes.DELETE
+    mode: Literal[UploadModes.DELETE]
 
 
 ############################################
@@ -103,27 +103,16 @@ class CropType(AutoIncrementBase, DataLineageBase, CropTypeBase, table=True):
     __tablename__ = "crop_types"
 
 
-class CropTypeInsert(CropTypeBase):
+class CropTypeInsert(CropTypeBase, Insert):
     """For inserting the id is not needed, as it will be auto-generated."""
 
-    mode: Literal[UploadModes.INSERT]
-    creator_id: int
-    updater_id: int
 
-
-class CropTypeUpdate(CropTypeBase):
+class CropTypeUpdate(CropTypeBase, Update):
     """For updating only the updater_id is needed."""
 
-    mode: Literal[UploadModes.UPDATE]
-    id: int
-    updater_id: int
 
-
-class CropTypeDelete(BaseModel):
+class CropTypeDelete(Delete):
     """For deleting a CropType, only the id is needed."""
-
-    mode: Literal[UploadModes.DELETE]
-    id: int
 
 
 class UserRead(BaseModel):
