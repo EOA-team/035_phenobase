@@ -28,11 +28,11 @@ class UserRead(BaseModel):
     """Response model for reading user data via API
     Excludes sensitive/not needed information like key_hash and id."""
 
-    f_account: str
+    f_account: str | None
     firstname: str
     lastname: str
     status: UserStatus
-    role: UserRole
+    role: UserRole | None 
     email: str
     # Note: key_hash is intentionally omitted for security reasons.
     # Note: id is intentionally omitted as it is not needed for reading user data.
@@ -68,6 +68,7 @@ class UserUpdate(UserBase):
 
     id: int
     mode: Literal[UploadModes.UPDATE]
+    key_hash: str | None = None
 
 
 class UserDelete(Delete):
