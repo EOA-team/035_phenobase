@@ -9,6 +9,9 @@ from sqlmodel import SQLModel
 from src.db import PhenobaseEnv, get_engine
 from src.scripts.script_utils import confirm_production
 
+# Tables used by SQLModel metadata
+from src.models.tables import crop_type, treatment, unit, user, variable #noqa: F401
+
 load_dotenv()
 
 
