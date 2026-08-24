@@ -5,7 +5,7 @@ import pytest
 from sqlmodel import Session, SQLModel
 
 from src.db import PhenobaseEnv, get_database_name, get_engine
-from src.models.models import User
+from src.models.tables.user import User
 
 SEEDS_FOLDER = Path(__file__).resolve().parent.parent / "seeds"
 
