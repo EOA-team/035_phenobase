@@ -14,12 +14,36 @@ from src.models.tables.crop_type import (
     CropTypeInsert,
     CropTypeUpdate,
 )
+from src.models.tables.treatment import (
+    Treatment,
+    TreatmentDelete,
+    TreatmentInsert,
+    TreatmentUpdate,
+)  
+
+from src.models.tables.unit import (
+    Unit,
+    UnitDelete,
+    UnitInsert,
+    UnitUpdate,  
+)
+
+from src.models.tables. variable import (
+    Variable,
+    VariableDelete,
+    VariableInsert,
+    VariableUpdate,
+)
+
 
 
 class UploadTables(StrEnum):
     """Tables managed by the Phenobase API."""
 
     CROP_TYPE = "crop_type"
+    TREATMENT = "treatment"
+    UNIT = "unit"
+    VARIABLE = "variable"
     ###Add here more 
 
 
@@ -72,6 +96,55 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
             "updater_id",
             "updated_at",
             "doc_path",
+        ],
+    ),
+    UploadTables.TREATMENT: TableSchema(
+        row_model=TreatmentInsert | TreatmentUpdate | TreatmentDelete,
+        table_model=Treatment,
+        read_model=Treatment,
+        filetype=UploadFileType.CSV,
+        read_order=[
+            "id",
+            "name",
+            "code",
+            "description",
+            "creator_id",
+            "created_at",
+            "updater_id",
+            "updated_at",
+            "doc_path",
+        ],
+    ),
+    UploadTables.UNIT: TableSchema(
+        row_model=UnitInsert | UnitUpdate | UnitDelete,
+        table_model=Unit,
+        read_model=Unit,
+        filetype=UploadFileType.CSV,
+        read_order=[
+            "id",
+            "name",
+            "code",
+            "description",
+            "creator_id",
+            "created_at",
+            "updater_id",
+            "updated_at",
+        ],
+    ),
+    UploadTables.VARIABLE: TableSchema(
+        row_model=VariableInsert | VariableUpdate | VariableDelete,
+        table_model=Variable,
+        read_model=Variable,
+        filetype=UploadFileType.CSV,
+        read_order=[
+            "id",
+            "name",
+            "code",
+            "description",
+            "creator_id",
+            "created_at",
+            "updater_id",
+            "updated_at",
         ],
     ),
 }
