@@ -5,7 +5,7 @@ Docstring for src.main
 from typing import Annotated
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, JSONResponse, Response, UploadFile
+from fastapi import Depends, FastAPI, Response, UploadFile
 from sqlmodel import Session
 
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
@@ -92,9 +92,9 @@ def get_table_data(
     Requires at least reader privileges.
     """
     if table_is_empty(session=session, table_name=table_name):
-        return JSONResponse(
+        return Response(
+            content=f"Table '{table_name}' is currently empty.",
             status_code=200,
-            content={"message": f"Table '{table_name}' is currently empty."},
         )
     df = get_db_table_as_pd(session=session, table_name=table_name)
     return Response(
