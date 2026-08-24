@@ -5,7 +5,7 @@ Docstring for src.main
 from typing import Annotated
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Response, UploadFile
+from fastapi import Depends, FastAPI, JSONResponse, Response, UploadFile
 from sqlmodel import Session
 
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
@@ -18,7 +18,7 @@ from src.data_upload import (
     write_to_database,
 )
 from src.db import get_db_session
-from src.db_utils import get_db_table_as_pd
+from src.db_utils import get_db_table_as_pd, table_is_empty
 from src.models.registry import UploadTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
 
@@ -91,6 +91,11 @@ def get_table_data(
     The response schema is resolved at runtime based on the table name.
     Requires at least reader privileges.
     """
+    if table_is_empty(session=session, table_name=table_name):
+        return JSONResponse(
+            status_code=200,
+            content={"message": f"Table '{table_name}' is currently empty."},
+        )
     df = get_db_table_as_pd(session=session, table_name=table_name)
     return Response(
         content=df.to_csv(index=False, sep=";", encoding="utf-8"),
