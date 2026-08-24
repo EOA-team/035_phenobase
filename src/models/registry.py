@@ -14,6 +14,12 @@ from src.models.tables.crop_type import (
     CropTypeInsert,
     CropTypeUpdate,
 )
+from src.models.tables.user import (
+    User,
+    UserDelete,
+    UserInsert,
+    UserUpdate,
+)
 from src.models.tables.treatment import (
     Treatment,
     TreatmentDelete,
@@ -44,6 +50,7 @@ class UploadTables(StrEnum):
     TREATMENT = "treatment"
     UNIT = "unit"
     VARIABLE = "variable"
+    USER = "user"
     ###Add here more 
 
 
@@ -145,6 +152,21 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
             "created_at",
             "updater_id",
             "updated_at",
+        ],
+    ),
+    UploadTables.USER: TableSchema(
+        row_model=UserInsert | UserUpdate | UserDelete,
+        table_model=User,
+        read_model=User,
+        filetype=UploadFileType.CSV,
+        read_order=[
+            "id",
+            "f_account",
+            "firstname",
+            "lastname",
+            "status",
+            "role",
+            "email",
         ],
     ),
 }

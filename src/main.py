@@ -5,7 +5,7 @@ Docstring for src.main
 from typing import Annotated
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Response, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, Response, UploadFile
 from sqlmodel import Session
 
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
@@ -85,12 +85,19 @@ def api_key_hash_pair() -> APIKeyHashRead:
 def get_table_data(
     table_name: UploadTables,
     session: Annotated[Session, Depends(get_db_session)],
+    current_user: Annotated[UserRead, Depends(get_current_user)],
 ):
     """**Get table data:**
     Returns the rows of the specified table as CSV.
     The response schema is resolved at runtime based on the table name.
-    Requires at least reader privileges.
+    Require at admin privileges for users table
+    Require at least reader privileges for all other tables.
     """
+    if table_name == UploadTables.USER and current_user.role != UserRole.admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Admin privileges required to read user data.",
+        )
     if table_is_empty(session=session, table_name=table_name):
         return Response(
             content=f"Table '{table_name}' is currently empty.",
@@ -107,15 +114,20 @@ def get_table_data(
 def upload_file(
     table_name: UploadTables,
     upload_file: UploadFile,
-    current_user: Annotated[UserRead, Depends(allow_roles(UserRole.writer))],
+    current_user: Annotated[UserRead, Depends(allow_roles(UserRole.writer, UserRole.admin))],
     session: Annotated[Session, Depends(get_db_session)],
 ):
     """**Upload data:**
     Uploads data to the specified table in Database
     and saves the uploaded files to the NAS for Logging.
 
-    Requires writer privileges.
+    Requires writer privileges (admin for the users table).
     """
+    if table_name == UploadTables.USER and current_user.role != UserRole.admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Admin privileges required to manage users.",
+        )
     validate_uploaded_file(upload_file=upload_file, table_name=table_name)
     df = read_upload_file(upload_file=upload_file).pipe(
         append_user_ids,
