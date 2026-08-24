@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Response, UploadFile
 from sqlmodel import Session
 
-from src.api import Role
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
 from src.data_upload import (
     append_user_ids,
@@ -20,7 +19,8 @@ from src.data_upload import (
 )
 from src.db import get_db_session
 from src.db_utils import get_db_table_as_pd
-from src.models import APIKeyHashRead, UploadTables, UserRead
+from src.models.registry import UploadTables
+from src.models.user import APIKeyHashRead, UserRead, UserRole
 
 load_dotenv()
 
@@ -65,7 +65,7 @@ def auth_me(current_user: Annotated[UserRead, Depends(get_current_user)]):
 @app.get(
     "/admin/generate-api-key",
     response_model=APIKeyHashRead,
-    dependencies=[Depends(allow_roles(Role.admin))],
+    dependencies=[Depends(allow_roles(UserRole.admin))],
     tags=["Admin"],
 )
 def api_key_hash_pair() -> APIKeyHashRead:
@@ -78,7 +78,9 @@ def api_key_hash_pair() -> APIKeyHashRead:
 
 @app.get(
     "/data/{table_name}",
-    dependencies=[Depends(allow_roles(Role.reader, Role.writer, Role.admin))],
+    dependencies=[
+        Depends(allow_roles(UserRole.reader, UserRole.writer, UserRole.admin))
+    ],
 )
 def get_table_data(
     table_name: UploadTables,
@@ -100,7 +102,7 @@ def get_table_data(
 def upload_file(
     table_name: UploadTables,
     upload_file: UploadFile,
-    current_user: Annotated[UserRead, Depends(allow_roles(Role.writer))],
+    current_user: Annotated[UserRead, Depends(allow_roles(UserRole.writer))],
     session: Annotated[Session, Depends(get_db_session)],
 ):
     """**Upload data:**

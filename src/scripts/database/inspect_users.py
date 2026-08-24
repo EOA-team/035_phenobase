@@ -5,7 +5,7 @@ from sqlalchemy import inspect
 from sqlmodel import select
 
 from src.db import get_engine
-from src.models import User
+from src.models.models import User
 
 if __name__ == "__main__":
     phenobase_engine = get_engine()

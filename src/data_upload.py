@@ -9,9 +9,11 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
-from src.models import (
-    SCHEMA_REGISTRY,
+from src.models.base import (
     UploadModes,
+)
+from src.models.registry import (
+    SCHEMA_REGISTRY,
     UploadTables,
 )
 from src.nas_helper import (

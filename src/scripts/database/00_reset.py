@@ -6,8 +6,8 @@ import os
 from dotenv import load_dotenv
 from sqlmodel import SQLModel
 
-from src import models  # noqa: F401
 from src.db import PhenobaseEnv, get_engine
+from src.models import models  # noqa: F401
 from src.scripts.script_utils import confirm_production
 
 load_dotenv()
