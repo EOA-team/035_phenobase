@@ -1,4 +1,4 @@
-"""SQL Model and Pydantic models for the crop_type table."""
+"""SQL Model and Pydantic models for the crop_types table."""
 
 from sqlmodel import TEXT, Field, SQLModel
 

@@ -8,7 +8,7 @@ from fastapi import Depends, Header, HTTPException
 from sqlmodel import Session, select
 
 from src.db import get_db_session
-from src.models.user import APIKeyHashRead, User, UserRole
+from src.models.tables.user import APIKeyHashRead, User, UserRole
 
 
 def get_api_key(api_key: str | None = Header(default=None, alias="X-API-Key")) -> str:

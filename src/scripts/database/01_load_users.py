@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from sqlmodel import Session, select
 
 from src.db import PhenobaseEnv, get_engine
-from src.models.models import User
+from src.models.tables.user import User
 from src.nas_helper import Password as NasPw
 from src.nas_helper import User as NasUser
 from src.nas_helper import build_unc_path, connect_to_nas

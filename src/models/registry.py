@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlmodel import SQLModel
 
 from src.models.base import UploadFileType
-from src.models.crop_type import (
+from src.models.tables.crop_type import (
     CropType,
     CropTypeDelete,
     CropTypeInsert,

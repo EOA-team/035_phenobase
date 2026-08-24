@@ -20,7 +20,7 @@ from src.data_upload import (
 from src.db import get_db_session
 from src.db_utils import get_db_table_as_pd
 from src.models.registry import UploadTables
-from src.models.user import APIKeyHashRead, UserRead, UserRole
+from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
 
 load_dotenv()
 
