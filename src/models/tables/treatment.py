@@ -22,7 +22,7 @@ class TreatmentUpdate(TreatmentBase, Update):
     """For updating the id and all other fields are needed."""
 
 
-class TreatmentDelete(TreatmentBase, Delete):
+class TreatmentDelete(Delete):
     """For deleting a Treatment, only the id is needed."""
 
 
