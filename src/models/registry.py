@@ -11,18 +11,21 @@ from sqlmodel import SQLModel
 from src.models.base import UploadFileType
 from src.models.tables.crop_type import (
     CropType,
+    CropTypeBase,
     CropTypeDelete,
     CropTypeInsert,
     CropTypeUpdate,
 )
 from src.models.tables.treatment import (
     Treatment,
+    TreatmentBase,
     TreatmentDelete,
     TreatmentInsert,
     TreatmentUpdate,
 )
 from src.models.tables.unit import (
     Unit,
+    UnitBase,
     UnitDelete,
     UnitInsert,
     UnitUpdate,
@@ -35,6 +38,7 @@ from src.models.tables.user import (
 )
 from src.models.tables.variable import (
     Variable,
+    VariableBase,
     VariableDelete,
     VariableInsert,
     VariableUpdate,
@@ -56,6 +60,7 @@ class UploadTables(StrEnum):
 class TableSchema:
     """Configuration for one API-managed table.
 
+    base_model:   SQL Base Model , all other models are derived from this.
     row_model:    Pydantic Basemodel (or union of insert/update/delete models) used to
                   validate each uploaded record.
     table_model:  SQLModel class (declared with table=True) the validated records
@@ -67,6 +72,7 @@ class TableSchema:
     filetype:     File format the API accepts for this table.
     """
 
+    base_model: type[BaseModel]
     row_model: type[BaseModel] | UnionType
     table_model: type[SQLModel]
     read_model: type[SQLModel]
@@ -87,6 +93,7 @@ class TableSchema:
 # and accepted filetype.
 SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
     UploadTables.CROP_TYPE: TableSchema(
+        base_model=CropTypeBase,
         row_model=Annotated[
             CropTypeInsert | CropTypeUpdate | CropTypeDelete,
             Field(discriminator="mode"),
@@ -107,6 +114,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
         ],
     ),
     UploadTables.TREATMENT: TableSchema(
+        base_model=TreatmentBase,
         row_model=Annotated[
             TreatmentInsert | TreatmentUpdate | TreatmentDelete,
             Field(discriminator="mode"),
@@ -127,6 +135,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
         ],
     ),
     UploadTables.UNIT: TableSchema(
+        base_model=UnitBase,
         row_model=Annotated[
             UnitInsert | UnitUpdate | UnitDelete,
             Field(discriminator="mode"),
@@ -146,6 +155,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
         ],
     ),
     UploadTables.VARIABLE: TableSchema(
+        base_model=VariableBase,
         row_model=Annotated[
             VariableInsert | VariableUpdate | VariableDelete,
             Field(discriminator="mode"),
@@ -165,6 +175,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
         ],
     ),
     UploadTables.USER: TableSchema(
+        base_model=User,
         row_model=Annotated[
             UserInsert | UserUpdate | UserDelete,
             Field(discriminator="mode"),

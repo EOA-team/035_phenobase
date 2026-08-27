@@ -32,6 +32,7 @@ load_dotenv()
 phenobase_env = os.getenv("PHENOBASE_ENV", "test")
 NAS_UPLOAD_FOLDER = rf"drone\phenobase\{phenobase_env}\uploads"
 
+
 def build_nas_upload_filename(table_name: UploadTables) -> str:
     """Build a filename for uploading to the NAS
     based on the current timestamp (UTC), table name, and file type."""
@@ -219,3 +220,21 @@ def _integrity_error_detail(err: IntegrityError) -> str:
     if primary and detail:
         return f"{primary} ({detail})"
     return detail or primary or str(err.orig)
+
+
+def build_upload_csv_template(table_name: UploadTables) -> str:
+    """Generates a csv template for data upload on the given table_name,
+    based on the base model in SCHEMA_REGISTRY."""
+
+    validation_schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    row_model = validation_schema.base_model
+    base_column = list(row_model.model_fields.keys())
+    columns = ["id", "mode", *base_column]
+
+    insert_row = ["", "insert", *["PLACEHOLDER" for _ in base_column]]
+    delete_row = ["PLACEHOLDER", "delete", *["" for _ in base_column]]
+    update_row = ["PLACEHOLDER", "update", *["PLACEHOLDER" for _ in base_column]]
+
+    rows = [columns, insert_row, update_row, delete_row]
+
+    return "\n".join(";".join(row) for row in rows) + "\n"

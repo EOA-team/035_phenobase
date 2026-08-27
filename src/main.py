@@ -11,6 +11,7 @@ from sqlmodel import Session
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
 from src.data_upload import (
     append_user_ids,
+    build_upload_csv_template,
     read_upload_file,
     validate_file_content,
     validate_uploaded_file,
@@ -106,6 +107,24 @@ def get_table_data(
     df = get_db_table_as_pd(session=session, table_name=table_name)
     return Response(
         content=df.to_csv(index=False, sep=";", encoding="utf-8"),
+        media_type="text/csv",
+    )
+
+
+@app.get(
+    "/data/upload-template/{table_name}",
+    dependencies=[
+        Depends(allow_roles(UserRole.reader, UserRole.writer, UserRole.admin))
+    ],
+)
+def get_upload_template(
+    table_name: UploadTables,
+):
+    """**Get upload template:**
+    Returns a CSV template for uploading data to the specified table.
+    """
+    return Response(
+        content=build_upload_csv_template(table_name=table_name),
         media_type="text/csv",
     )
 
