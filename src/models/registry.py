@@ -3,8 +3,9 @@
 from dataclasses import dataclass
 from enum import StrEnum
 from types import UnionType
+from typing import Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlmodel import SQLModel
 
 from src.models.base import UploadFileType
@@ -86,7 +87,10 @@ class TableSchema:
 # and accepted filetype.
 SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
     UploadTables.CROP_TYPE: TableSchema(
-        row_model=CropTypeInsert | CropTypeUpdate | CropTypeDelete,
+        row_model=Annotated[
+            CropTypeInsert | CropTypeUpdate | CropTypeDelete,
+            Field(discriminator="mode"),
+        ],
         table_model=CropType,
         read_model=CropType,
         filetype=UploadFileType.CSV,
@@ -103,7 +107,10 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
         ],
     ),
     UploadTables.TREATMENT: TableSchema(
-        row_model=TreatmentInsert | TreatmentUpdate | TreatmentDelete,
+        row_model=Annotated[
+            TreatmentInsert | TreatmentUpdate | TreatmentDelete,
+            Field(discriminator="mode"),
+        ],
         table_model=Treatment,
         read_model=Treatment,
         filetype=UploadFileType.CSV,
@@ -120,7 +127,10 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
         ],
     ),
     UploadTables.UNIT: TableSchema(
-        row_model=UnitInsert | UnitUpdate | UnitDelete,
+        row_model=Annotated[
+            UnitInsert | UnitUpdate | UnitDelete,
+            Field(discriminator="mode"),
+        ],
         table_model=Unit,
         read_model=Unit,
         filetype=UploadFileType.CSV,
@@ -136,7 +146,10 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
         ],
     ),
     UploadTables.VARIABLE: TableSchema(
-        row_model=VariableInsert | VariableUpdate | VariableDelete,
+        row_model=Annotated[
+            VariableInsert | VariableUpdate | VariableDelete,
+            Field(discriminator="mode"),
+        ],
         table_model=Variable,
         read_model=Variable,
         filetype=UploadFileType.CSV,
@@ -152,7 +165,10 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
         ],
     ),
     UploadTables.USER: TableSchema(
-        row_model=UserInsert | UserUpdate | UserDelete,
+        row_model=Annotated[
+            UserInsert | UserUpdate | UserDelete,
+            Field(discriminator="mode"),
+        ],
         table_model=User,
         read_model=User,
         filetype=UploadFileType.CSV,
