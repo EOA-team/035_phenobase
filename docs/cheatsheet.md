@@ -30,7 +30,7 @@ ruff format --diff  # Preview formatting diff
 # Run all (unit-tests)(integration-tests)(slow integration-tests)
 # Note: To include integration-tests in coverage add the --integration-cover FLAG
 pytest -s -v 
-#Check Coverage 
+pytest --cov=src --cov-report=term-missing 
 pytest --cov=src --integration-cover --cov-fail-under=80 -s -v
 
 # Run only (unit-tests)(integration-tests)
