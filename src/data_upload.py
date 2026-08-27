@@ -32,7 +32,6 @@ load_dotenv()
 phenobase_env = os.getenv("PHENOBASE_ENV", "test")
 NAS_UPLOAD_FOLDER = rf"drone\phenobase\{phenobase_env}\uploads"
 
-
 def build_nas_upload_filename(table_name: UploadTables) -> str:
     """Build a filename for uploading to the NAS
     based on the current timestamp (UTC), table name, and file type."""
@@ -108,8 +107,9 @@ def validate_file_content(
             detail=f"No validation schema found for table '{table_name}'",
         )
 
-    errors = []
     validated = []
+    errors = []
+    failed_rows = 0
 
     row_adapter = TypeAdapter(validation_schema.row_model)
 
@@ -119,19 +119,26 @@ def validate_file_content(
             validated.append(row_adapter.validate_python(record))
 
         except ValidationError as row_error:
+            failed_rows += 1
             line = index + 2  # +2 to account for header and 0-indexing
             for err in row_error.errors(include_url=False, include_context=False):
                 errors.append(
                     {
-                        "type": err.get("type", "value_error"),
-                        "loc": ("line", line, *err.get("loc", ())),
+                        "code": err.get("type", "value_error"),
+                        "loc": ["line", line, *err.get("loc", ())],
                         "msg": err.get("msg", "Unknown validation error"),
-                        "input": record,
                     }
                 )
-    if errors:
+
+    if failed_rows:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=errors
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "type": "validation_error",
+                "title": "File validation failed",
+                "failed_rows": failed_rows,
+                "errors": errors,
+            },
         )
     return validated
 
