@@ -1,7 +1,7 @@
 id;mode;name;code;description
-;insert;Kilogram per Hectare;kg/ha;common unit for biomass dry weight
-;insert;Meter;m;common unit for plant height and length
-;insert;Kilogram;kg;common unit for mass
-;insert;Cubic Meter;m^3;Unit of Volume
-1;delete;something;
-4;delete;
+;Insert;Kilogram per Hectare;kg/ha;common unit for biomass dry weight
+; insert;Meter;m;common unit for plant height and length
+;insert ;Kilogram;kg;common unit for mass
+;inSert;Cubic Meter;m^3;Unit of Volume
+1; Delete;something;
+4;deleTe ;

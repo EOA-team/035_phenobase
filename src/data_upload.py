@@ -53,8 +53,12 @@ def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
     )
 
     # Basic Clearning
-    raw_df.columns = raw_df.columns.str.lower()
-    raw_df.columns = raw_df.columns.str.strip()
+    raw_df.columns = raw_df.columns.str.lower()  # Lower on headers
+    # Strip whitespace (e.g. modes " insert" or "update " instead of "insert" or "update")
+    raw_df = raw_df.map(lambda x: x.strip() if isinstance(x, str) else x)
+    # Make sure "Insert" or "Update" is treated the same as "insert" or "update" (lowercase)
+    if "mode" in raw_df.columns:
+        raw_df["mode"] = raw_df["mode"].str.lower()  # Lower on modes
     # Replace pandas NA and NaN with None for consistency
     df = raw_df.replace({pd.NA: None, float("nan"): None})
 
