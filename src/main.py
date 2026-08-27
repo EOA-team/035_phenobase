@@ -114,7 +114,9 @@ def get_table_data(
 def upload_file(
     table_name: UploadTables,
     upload_file: UploadFile,
-    current_user: Annotated[UserRead, Depends(allow_roles(UserRole.writer, UserRole.admin))],
+    current_user: Annotated[
+        UserRead, Depends(allow_roles(UserRole.writer, UserRole.admin))
+    ],
     session: Annotated[Session, Depends(get_db_session)],
 ):
     """**Upload data:**

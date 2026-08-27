@@ -32,7 +32,7 @@ class UserRead(BaseModel):
     firstname: str
     lastname: str
     status: UserStatus
-    role: UserRole | None 
+    role: UserRole | None
     email: str
     # Note: key_hash is intentionally omitted for security reasons.
     # Note: id is intentionally omitted as it is not needed for reading user data.

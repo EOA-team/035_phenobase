@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 import smbclient
+from dotenv import load_dotenv
 from fastapi import HTTPException, UploadFile, status
 from pydantic import BaseModel, TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -27,7 +28,9 @@ from src.nas_helper import (
     connect_to_nas,
 )
 
-NAS_UPLOAD_FOLDER = r"drone\phenobase\production\uploads"
+load_dotenv()
+phenobase_env = os.getenv("PHENOBASE_ENV", "test")
+NAS_UPLOAD_FOLDER = rf"drone\phenobase\{phenobase_env}\uploads"
 
 
 def build_nas_upload_filename(table_name: UploadTables) -> str:

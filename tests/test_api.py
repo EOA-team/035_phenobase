@@ -1,8 +1,11 @@
 """Unit tests for the Phenobase Dataplatform API endpoints."""
 
 # Testclient allows to test API endpoints without having to run the server.
+import io
 import os
+from pathlib import Path
 
+import pandas as pd
 import pytest
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
@@ -10,6 +13,8 @@ from fastapi.testclient import TestClient
 from src.main import app
 
 load_dotenv()
+
+TEST_CSVS_FOLDER = Path(__file__).parent / "test_csvs"
 
 
 def test_health_check():
@@ -74,3 +79,31 @@ def test_generate_api_key(phenobase_db_minimal):
     headers = {"X-API-Key": os.getenv("MAX_MUSTERMANN_API_KEY")}
     response = client.get("/admin/generate-api-key", headers=headers)
     assert response.status_code == 403
+
+
+@pytest.mark.integration_test
+def test_insert_and_delete(phenobase_db_minimal):
+    """Test the POST /data/upload/{table_name} with INSERT and DELETE operations,
+    then verify with GET /data/{table_name}"""
+    csv_file_name = "unit_tbl_insert_delete.csv"
+    csv_file_path = TEST_CSVS_FOLDER / csv_file_name
+
+    client = TestClient(app)
+    x_api_key_header = {"X-API-Key": os.getenv("MAX_MUSTERMANN_API_KEY")}
+    response = client.post(
+        "data/upload/unit",
+        headers=x_api_key_header,
+        files={"upload_file": (csv_file_name, csv_file_path.read_bytes(), "text/csv")},
+    )
+    assert response.status_code == 200
+
+    response = client.get("data/unit", headers=x_api_key_header)
+    df = pd.read_csv(io.BytesIO(response.content), sep=";")
+
+    deleted_ids = df.query("id in [1,4]")
+    inserted_id2 = df.query("id == 2")
+    inserted_id3 = df.query("id == 3")
+
+    assert deleted_ids.empty
+    assert inserted_id2.iloc[0]["name"] == "Meter"
+    assert inserted_id3.iloc[0]["code"] == "kg"

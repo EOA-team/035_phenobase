@@ -14,33 +14,30 @@ from src.models.tables.crop_type import (
     CropTypeInsert,
     CropTypeUpdate,
 )
+from src.models.tables.treatment import (
+    Treatment,
+    TreatmentDelete,
+    TreatmentInsert,
+    TreatmentUpdate,
+)
+from src.models.tables.unit import (
+    Unit,
+    UnitDelete,
+    UnitInsert,
+    UnitUpdate,
+)
 from src.models.tables.user import (
     User,
     UserDelete,
     UserInsert,
     UserUpdate,
 )
-from src.models.tables.treatment import (
-    Treatment,
-    TreatmentDelete,
-    TreatmentInsert,
-    TreatmentUpdate,
-)  
-
-from src.models.tables.unit import (
-    Unit,
-    UnitDelete,
-    UnitInsert,
-    UnitUpdate,  
-)
-
-from src.models.tables. variable import (
+from src.models.tables.variable import (
     Variable,
     VariableDelete,
     VariableInsert,
     VariableUpdate,
 )
-
 
 
 class UploadTables(StrEnum):
@@ -51,7 +48,7 @@ class UploadTables(StrEnum):
     UNIT = "unit"
     VARIABLE = "variable"
     USER = "user"
-    ###Add here more 
+    ###Add here more
 
 
 @dataclass(frozen=True)
