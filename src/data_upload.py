@@ -53,6 +53,7 @@ def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
 
     # Basic Clearning
     raw_df.columns = raw_df.columns.str.lower()  # Lower on headers
+    raw_df.columns = raw_df.columns.str.strip()  # Strip whitespace on headers
     # Strip whitespace (e.g. modes " insert" or "update " instead of "insert" or "update")
     raw_df = raw_df.map(lambda x: x.strip() if isinstance(x, str) else x)
     # Make sure "Insert" or "Update" is treated the same as "insert" or "update" (lowercase)
