@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel
-from sqlalchemy import DateTime, Column
+from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
 
@@ -64,19 +64,14 @@ class DataLineageBase(SQLModel):
     creator_id: int = Field(foreign_key="users.id")
     created_at: datetime | None = Field(
         default_factory=utc_now,
-        sa_column=Column(
-            DateTime(timezone=True),
-            nullable=False, 
-            default=utc_now
-            ),
+        sa_type=DateTime(timezone=True),
+        nullable=False,
+        sa_column_kwargs={"default": utc_now},
     )
     updater_id: int = Field(foreign_key="users.id")
     updated_at: datetime | None = Field(
         default_factory=utc_now,
-        sa_column=Column(
-            DateTime(timezone=True),
-            nullable=False,
-            default=utc_now,
-            onupdate=utc_now,
-        ),
+        sa_type=DateTime(timezone=True),
+        nullable=False,
+        sa_column_kwargs={"default": utc_now, "onupdate": utc_now},
     )
