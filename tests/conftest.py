@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from sqlmodel import Session, SQLModel
 
-from src.db import PhenobaseEnv, get_database_name, get_engine, get_engine_sqlite
+from src.db import PhenobaseEnv, get_database_name, get_engine_postgresql, get_engine_sqlite
 from src.models.tables.user import User
 
 SEEDS_FOLDER = Path(__file__).resolve().parent.parent / "seeds"
@@ -13,7 +13,7 @@ SEEDS_FOLDER = Path(__file__).resolve().parent.parent / "seeds"
 @pytest.fixture(scope="session")
 def phenobase_db_minimal():
     """Fixture to set up a minimal test database for integration tests."""
-    engine = get_engine()
+    engine = get_engine_postgresql()
     active_db_name = engine.url.database
     if active_db_name != get_database_name(PhenobaseEnv.TEST):
         raise ValueError(

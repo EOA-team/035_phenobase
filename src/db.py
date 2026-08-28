@@ -20,12 +20,15 @@ DB_NAME_LUT = {
     PhenobaseEnv.PRODUCTION: "phenobase",
 }
 
+class ENGINE_TYPE(StrEnum):
+    POSTGRESQL = "postgresql"
+    SQLITE = "sqlite"
 
 def get_database_name(phenobase_env: PhenobaseEnv) -> str:
     return DB_NAME_LUT[phenobase_env]
 
 
-def get_engine():
+def get_engine_postgresql():
     """Create a PostgreSQL engine to connect to "test" or "production" database.
     Used for:
     1. Running the Phenobase API (FastAPI) in production or test mode.
@@ -67,7 +70,14 @@ def get_engine_sqlite():
     return engine
 
 
-def get_db_session():
+def get_db_session(engine : ENGINE_TYPE):
     """Yield a database session for FastAPI dependency injection."""
-    with Session(get_engine()) as session:
-        yield session
+    if engine == ENGINE_TYPE.POSTGRESQL:
+        with Session(get_engine_postgresql()) as session:
+            yield session
+    elif engine == ENGINE_TYPE.SQLITE:
+        with Session(get_engine_sqlite()) as session:
+            yield session
+    else:
+        raise ValueError(f"Unsupported engine type: {engine}")
+

@@ -18,12 +18,14 @@ from src.data_upload import (
     write_file_to_nas,
     write_to_database,
 )
-from src.db import get_db_session
+from src.db import get_db_session, ENGINE_TYPE
 from src.db_utils import get_db_table_as_pd, table_is_empty
 from src.models.registry import UploadTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
 
 load_dotenv()
+
+
 
 app = FastAPI(
     title="Phenobase API",
@@ -85,7 +87,7 @@ def api_key_hash_pair() -> APIKeyHashRead:
 )
 def get_table_data(
     table_name: UploadTables,
-    session: Annotated[Session, Depends(get_db_session)],
+    session: Annotated[Session, Depends(get_db_session(ENGINE_TYPE.POSTGRESQL))],
     current_user: Annotated[UserRead, Depends(get_current_user)],
 ):
     """**Get table data:**
@@ -136,7 +138,7 @@ def upload_file(
     current_user: Annotated[
         UserRead, Depends(allow_roles(UserRole.writer, UserRole.admin))
     ],
-    session: Annotated[Session, Depends(get_db_session)],
+    session: Annotated[Session, Depends(get_db_session(ENGINE_TYPE.POSTGRESQL))],
 ):
     """**Upload data:**
     Uploads data to the specified table in Database
