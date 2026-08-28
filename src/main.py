@@ -152,12 +152,11 @@ def upload_file(
             detail="Admin privileges required to manage users.",
         )
     validate_uploaded_file(upload_file=upload_file, table_name=table_name)
-    df = read_upload_file(upload_file=upload_file).pipe(
-        append_user_ids,
+    df = append_user_ids(
+        df=read_upload_file(upload_file=upload_file),
         current_user_id=current_user.id,
         current_user=current_user.firstname + " " + current_user.lastname,
     )
-
     validated_rows = validate_file_content(df=df, table_name=table_name)
     write_to_database(session=session, table_name=table_name, rows=validated_rows)
 
