@@ -10,7 +10,7 @@ import smbclient
 from dotenv import load_dotenv
 from sqlmodel import Session, select
 
-from src.db import PhenobaseEnv, get_engine
+from src.db import PhenobaseEnv, get_engine_postgresql
 from src.models.tables.user import User
 from src.nas_helper import Password as NasPw
 from src.nas_helper import User as NasUser
@@ -35,12 +35,12 @@ def load_users_from_nas() -> list[dict]:
 
 
 if __name__ == "__main__":
-    phenobase_environment = PhenobaseEnv(os.getenv("PHENOBASE_ENV"))
+    phenobase_environment = PhenobaseEnv(os.environ["PHENOBASE_ENV"])
     if phenobase_environment == PhenobaseEnv.PRODUCTION:
         confirm_production()
 
     users_data = load_users_from_nas()
-    engine = get_engine()
+    engine = get_engine_postgresql()
 
     with Session(engine) as session:
         table_has_users = session.exec(select(User.id)).first() is not None

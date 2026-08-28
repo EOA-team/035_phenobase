@@ -26,7 +26,7 @@ def _make_upload_file(path: Path) -> UploadFile:
     return UploadFile(file=io.BytesIO(path.read_bytes()), filename=path.name)
 
 
-def _get_user_by_api_key(session: Session, api_key: str) -> User:
+def _get_user_by_api_key(session: Session, api_key: str) -> User | None:
     """Retrieve a user from the database based on the provided API key."""
     key_hash = hash_api_key(api_key)
     statement = select(User).where(User.key_hash == key_hash)

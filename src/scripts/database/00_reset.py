@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 from sqlmodel import SQLModel
 
-from src.db import PhenobaseEnv, get_engine
+from src.db import PhenobaseEnv, get_engine_postgresql
 
 # Tables used by SQLModel metadata
 from src.models.tables import crop_type, treatment, unit, user, variable  # noqa: F401
@@ -17,7 +17,7 @@ load_dotenv()
 
 def reset_database() -> None:
     """Drop and recreate all tables defined in the SQLModel metadata."""
-    engine = get_engine()
+    engine = get_engine_postgresql()
     SQLModel.metadata.drop_all(
         engine,
     )
@@ -26,7 +26,7 @@ def reset_database() -> None:
 
 
 if __name__ == "__main__":
-    phenobase_environment = PhenobaseEnv(os.getenv("PHENOBASE_ENV"))
+    phenobase_environment = PhenobaseEnv(os.environ["PHENOBASE_ENV"])
     if phenobase_environment == PhenobaseEnv.PRODUCTION:
         confirm_production()
     reset_database()

@@ -29,7 +29,7 @@ from src.nas_helper import (
 )
 
 load_dotenv()
-phenobase_env = os.getenv("PHENOBASE_ENV", "test")
+phenobase_env = os.environ["PHENOBASE_ENV"]
 NAS_UPLOAD_FOLDER = rf"drone\phenobase\{phenobase_env}\uploads"
 
 
@@ -85,7 +85,10 @@ def validate_uploaded_file(table_name: UploadTables, upload_file: UploadFile) ->
         raise HTTPException(
             status_code=400, detail=f"Unsupported table for upload: {table_name}"
         )
-
+    if upload_file.filename is None:
+        raise HTTPException(
+            status_code=400, detail="Missing filename in the uploaded file."
+        )
     filetype = upload_file.filename.split(".")[-1]
     if not upload_file.filename.endswith(schema.filetype.value):
         raise HTTPException(
@@ -227,6 +230,10 @@ def build_upload_csv_template(table_name: UploadTables) -> str:
     based on the base model in SCHEMA_REGISTRY."""
 
     validation_schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    if validation_schema is None:
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported table for upload: {table_name}"
+        )
     row_model = validation_schema.base_model
     base_column = list(row_model.model_fields.keys())
     columns = ["id", "mode", *base_column]

@@ -4,11 +4,11 @@ import pandas as pd
 from sqlalchemy import inspect
 from sqlmodel import select
 
-from src.db import get_engine
+from src.db import get_engine_postgresql
 from src.models.tables.user import User
 
 if __name__ == "__main__":
-    phenobase_engine = get_engine()
+    phenobase_engine = get_engine_postgresql()
     inspector = inspect(phenobase_engine)
     print(inspector.get_table_names())
 

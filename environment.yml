@@ -24,5 +24,7 @@ dependencies:
   - httpx2
   - sqlmodel
   - psycopg
+  - pandas
+  - pandas-stubs
   - pip: 
   # pip-only packages go here if needed
