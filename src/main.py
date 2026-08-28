@@ -2,6 +2,7 @@
 Docstring for src.main
 """
 
+import os
 from typing import Annotated
 
 from dotenv import load_dotenv
@@ -18,13 +19,12 @@ from src.data_upload import (
     write_file_to_nas,
     write_to_database,
 )
-from src.db import get_db_session, ENGINE_TYPE
+from src.db import PhenobaseEnv, get_db_session
 from src.db_utils import get_db_table_as_pd, table_is_empty
 from src.models.registry import UploadTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
 
 load_dotenv()
-
 
 
 app = FastAPI(
@@ -87,7 +87,7 @@ def api_key_hash_pair() -> APIKeyHashRead:
 )
 def get_table_data(
     table_name: UploadTables,
-    session: Annotated[Session, Depends(get_db_session(ENGINE_TYPE.POSTGRESQL))],
+    session: Annotated[Session, Depends(get_db_session)],
     current_user: Annotated[UserRead, Depends(get_current_user)],
 ):
     """**Get table data:**
@@ -138,7 +138,7 @@ def upload_file(
     current_user: Annotated[
         UserRead, Depends(allow_roles(UserRole.writer, UserRole.admin))
     ],
-    session: Annotated[Session, Depends(get_db_session(ENGINE_TYPE.POSTGRESQL))],
+    session: Annotated[Session, Depends(get_db_session)],
 ):
     """**Upload data:**
     Uploads data to the specified table in Database
@@ -162,7 +162,9 @@ def upload_file(
     write_to_database(session=session, table_name=table_name, rows=validated_rows)
 
     # Write the uploaded file to NAS for logging (skip for users table, because Users would be visible to anyone on NAS)
-    if table_name != UploadTables.USER:
+    # Also skip if running in CI_TEST environment, because NAS is not available in CI/CD pipelines
+    phenobase_env = os.getenv("PHENOBASE_ENV")
+    if table_name != UploadTables.USER and phenobase_env != PhenobaseEnv.CI_TEST:
         upload_csv = df.to_csv(index=False, sep=";", encoding="utf-8")
         write_file_to_nas(table_name=table_name, data=upload_csv.encode("utf-8"))
 

@@ -1,7 +1,9 @@
 """Database engine and session management for Phenobase."""
 
 import os
+from contextlib import contextmanager
 from enum import StrEnum
+from functools import cache
 
 from dotenv import load_dotenv
 from sqlalchemy import StaticPool, create_engine
@@ -13,6 +15,12 @@ load_dotenv()
 class PhenobaseEnv(StrEnum):
     TEST = "test"
     PRODUCTION = "production"
+    CI_TEST = "ci_test"
+
+
+class EngineType(StrEnum):
+    POSTGRESQL = "postgresql"
+    SQLITE = "sqlite"
 
 
 DB_NAME_LUT = {
@@ -20,12 +28,19 @@ DB_NAME_LUT = {
     PhenobaseEnv.PRODUCTION: "phenobase",
 }
 
-class ENGINE_TYPE(StrEnum):
-    POSTGRESQL = "postgresql"
-    SQLITE = "sqlite"
+DB_ENGINE_LUT = {
+    PhenobaseEnv.TEST: EngineType.POSTGRESQL,
+    PhenobaseEnv.PRODUCTION: EngineType.POSTGRESQL,
+    PhenobaseEnv.CI_TEST: EngineType.SQLITE,
+}
+
 
 def get_database_name(phenobase_env: PhenobaseEnv) -> str:
     return DB_NAME_LUT[phenobase_env]
+
+
+def get_engine_type(phenobase_env: PhenobaseEnv) -> str:
+    return DB_ENGINE_LUT[phenobase_env]
 
 
 def get_engine_postgresql():
@@ -57,10 +72,15 @@ def get_engine_postgresql():
     return engine
 
 
+@cache
 def get_engine_sqlite():
     """Create an in-memory SQLite engine .
     Used For:
     1. Running unit tests on CI/CD pipelines (Docker)
+
+    @cache returns the SAME engine on every call: an in-memory SQLite
+    database lives inside its engine/connection (StaticPool), so creating
+    a new engine per call would give each caller its own empty database.
     """
     engine = create_engine(
         "sqlite:///:memory:",
@@ -70,14 +90,22 @@ def get_engine_sqlite():
     return engine
 
 
-def get_db_session(engine : ENGINE_TYPE):
-    """Yield a database session for FastAPI dependency injection."""
-    if engine == ENGINE_TYPE.POSTGRESQL:
+@contextmanager
+def open_db_session():
+    """Yield a context manager of db session for Pytest Fixtures"""
+    phenobase_env = PhenobaseEnv(os.getenv("PHENOBASE_ENV"))
+    engine_type = get_engine_type(phenobase_env)
+    if engine_type == EngineType.POSTGRESQL:
         with Session(get_engine_postgresql()) as session:
             yield session
-    elif engine == ENGINE_TYPE.SQLITE:
+    elif engine_type == EngineType.SQLITE:
         with Session(get_engine_sqlite()) as session:
             yield session
     else:
-        raise ValueError(f"Unsupported engine type: {engine}")
+        raise ValueError(f"Unsupported engine type: {engine_type}")
 
+
+def get_db_session():
+    """Yield a generator for the FastAPI session"""
+    with open_db_session() as session:
+        yield session
