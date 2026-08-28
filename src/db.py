@@ -4,7 +4,7 @@ import os
 from enum import StrEnum
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import StaticPool, create_engine
 from sqlmodel import Session
 
 load_dotenv()
@@ -26,7 +26,12 @@ def get_database_name(phenobase_env: PhenobaseEnv) -> str:
 
 
 def get_engine():
-    """Create a SQLAlchemy engine for the specified database."""
+    """Create a PostgreSQL engine to connect to "test" or "production" database.
+    Used for:
+    1. Running the Phenobase API (FastAPI) in production or test mode.
+    2. Running integration tests that require a real database connection.
+    3. Running specific PostgreSQL-specific features, such as PostGIS spatial queries
+    """
 
     phenobase_env = PhenobaseEnv(os.getenv("PHENOBASE_ENV"))
     dbname = get_database_name(phenobase_env)
@@ -46,6 +51,19 @@ def get_engine():
         pool_pre_ping=True,  # Make sure the connection is still alive before using it, to avoid errors due to stale connections
     )
 
+    return engine
+
+
+def get_engine_sqlite():
+    """Create an in-memory SQLite engine .
+    Used For:
+    1. Running unit tests on CI/CD pipelines (Docker)
+    """
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     return engine
 
 
