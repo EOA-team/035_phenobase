@@ -34,6 +34,7 @@ class UploadRow(Protocol):
     """Structural type for Insert/Update/Delete row models."""
 
     mode: object
+
     def model_dump(self, **kwargs: Any) -> dict[str, Any]: ...
 
 
@@ -201,7 +202,9 @@ def write_to_database(
             session.add(table(**row.model_dump(exclude={"mode"})))
 
         elif mode == UploadModes.UPDATE:
-            row_id = cast("UploadRowWithId", row).id  # guaranteed by validate_file_content
+            row_id = cast(
+                "UploadRowWithId", row
+            ).id  # guaranteed by validate_file_content
             existing = session.get(table, row_id)
             if existing is None:
                 raise HTTPException(
@@ -212,7 +215,9 @@ def write_to_database(
                 setattr(existing, field, value)
 
         elif mode == UploadModes.DELETE:
-            row_id = cast("UploadRowWithId", row).id  # guaranteed by validate_file_content
+            row_id = cast(
+                "UploadRowWithId", row
+            ).id  # guaranteed by validate_file_content
             existing = session.get(table, row_id)
             if existing is None:
                 raise HTTPException(
