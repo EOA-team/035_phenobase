@@ -2,46 +2,37 @@
 
 from dataclasses import dataclass
 from enum import StrEnum
-from types import UnionType
-from typing import Annotated
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlmodel import SQLModel
 
 from src.models.base import UploadFileType
+from src.models.row_models import (
+    CropTypeRow,
+    TreatmentRow,
+    UnitRow,
+    UserRow,
+    VariableRow,
+)
 from src.models.tables.crop_type import (
     CropType,
     CropTypeBase,
-    CropTypeDelete,
-    CropTypeInsert,
-    CropTypeUpdate,
 )
 from src.models.tables.treatment import (
     Treatment,
     TreatmentBase,
-    TreatmentDelete,
-    TreatmentInsert,
-    TreatmentUpdate,
 )
 from src.models.tables.unit import (
     Unit,
     UnitBase,
-    UnitDelete,
-    UnitInsert,
-    UnitUpdate,
 )
 from src.models.tables.user import (
     User,
-    UserDelete,
-    UserInsert,
-    UserUpdate,
 )
 from src.models.tables.variable import (
     Variable,
     VariableBase,
-    VariableDelete,
-    VariableInsert,
-    VariableUpdate,
 )
 
 
@@ -61,8 +52,8 @@ class TableSchema:
     """Configuration for one API-managed table.
 
     base_model:   SQL Base Model , all other models are derived from this.
-    row_model:    Pydantic Basemodel (or union of insert/update/delete models) used to
-                  validate each uploaded record.
+    row_model:    A row model defined in src.models.row_models, used to validate uploaded records for this table.
+                  Type is resolved during runtime via the ``mode`` field, which discriminates between Insert, Update, and Delete variants.
     table_model:  SQLModel class (declared with table=True) the validated records
                   are written to.
     read_model:   SQLModel class used as the API response model for reading this
@@ -73,7 +64,9 @@ class TableSchema:
     """
 
     base_model: type[BaseModel]
-    row_model: type[BaseModel] | UnionType
+    # Only select row_models from the row_models.py file despite type is Any
+    # Needed to select Any, because Static Type checking via Mypy is not possible here, as the row_model is defined during runtime.
+    row_model: Any
     table_model: type[SQLModel]
     read_model: type[SQLModel]
     filetype: UploadFileType
@@ -94,10 +87,7 @@ class TableSchema:
 SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
     UploadTables.CROP_TYPE: TableSchema(
         base_model=CropTypeBase,
-        row_model=Annotated[
-            CropTypeInsert | CropTypeUpdate | CropTypeDelete,
-            Field(discriminator="mode"),
-        ],
+        row_model=CropTypeRow,
         table_model=CropType,
         read_model=CropType,
         filetype=UploadFileType.CSV,
@@ -115,10 +105,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
     ),
     UploadTables.TREATMENT: TableSchema(
         base_model=TreatmentBase,
-        row_model=Annotated[
-            TreatmentInsert | TreatmentUpdate | TreatmentDelete,
-            Field(discriminator="mode"),
-        ],
+        row_model=TreatmentRow,
         table_model=Treatment,
         read_model=Treatment,
         filetype=UploadFileType.CSV,
@@ -136,10 +123,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
     ),
     UploadTables.UNIT: TableSchema(
         base_model=UnitBase,
-        row_model=Annotated[
-            UnitInsert | UnitUpdate | UnitDelete,
-            Field(discriminator="mode"),
-        ],
+        row_model=UnitRow,
         table_model=Unit,
         read_model=Unit,
         filetype=UploadFileType.CSV,
@@ -156,10 +140,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
     ),
     UploadTables.VARIABLE: TableSchema(
         base_model=VariableBase,
-        row_model=Annotated[
-            VariableInsert | VariableUpdate | VariableDelete,
-            Field(discriminator="mode"),
-        ],
+        row_model=VariableRow,
         table_model=Variable,
         read_model=Variable,
         filetype=UploadFileType.CSV,
@@ -176,10 +157,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
     ),
     UploadTables.USER: TableSchema(
         base_model=User,
-        row_model=Annotated[
-            UserInsert | UserUpdate | UserDelete,
-            Field(discriminator="mode"),
-        ],
+        row_model=UserRow,
         table_model=User,
         read_model=User,
         filetype=UploadFileType.CSV,

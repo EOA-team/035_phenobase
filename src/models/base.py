@@ -64,7 +64,7 @@ class DataLineageBase(SQLModel):
     creator_id: int = Field(foreign_key="users.id")
     created_at: datetime | None = Field(
         default_factory=utc_now,
-        sa_type=DateTime(timezone=True),  # type: ignore[call-overload] 
+        sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
         # Runtime works perfectly. mypy fails because SQLModel's internal Field()
         # type definitions don't support instantiated SQLAlchemy types (with parentheses) well.
         nullable=False,
