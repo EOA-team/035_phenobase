@@ -1,12 +1,13 @@
 import os
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, Protocol, cast
 
 import pandas as pd
 import smbclient
 from dotenv import load_dotenv
 from fastapi import HTTPException, UploadFile, status
-from pydantic import BaseModel, TypeAdapter, ValidationError
+from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
@@ -27,6 +28,20 @@ from src.nas_helper import (
     build_unc_path,
     connect_to_nas,
 )
+
+
+class UploadRow(Protocol):
+    """Structural type for Insert/Update/Delete row models."""
+
+    mode: object
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]: ...
+
+
+class UploadRowWithId(UploadRow, Protocol):
+    """Row model that also carries a primary key (Update/Delete)."""
+
+    id: int
+
 
 load_dotenv()
 phenobase_env = os.environ["PHENOBASE_ENV"]
@@ -100,7 +115,7 @@ def validate_uploaded_file(table_name: UploadTables, upload_file: UploadFile) ->
 
 def validate_file_content(
     df: pd.DataFrame, table_name: UploadTables
-) -> list[BaseModel]:
+) -> list[UploadRow]:
     """Validate the data in the DataFrame against the corresponding Pydantic row model.
     The row model is determined based on the table name using the SCHEMA_REGISTRY.
     """
@@ -112,11 +127,11 @@ def validate_file_content(
             detail=f"No validation schema found for table '{table_name}'",
         )
 
-    validated = []
+    validated: list[UploadRow] = []
     errors = []
     failed_rows = 0
 
-    row_adapter = TypeAdapter(validation_schema.row_model)
+    row_adapter: TypeAdapter[UploadRow] = TypeAdapter(validation_schema.row_model)
 
     records = df.to_dict(orient="records")
     for index, record in enumerate(records):
@@ -166,7 +181,7 @@ def write_file_to_nas(table_name: UploadTables, data: bytes) -> None:
 def write_to_database(
     session: Session,
     table_name: UploadTables,
-    rows: list[BaseModel],
+    rows: list[UploadRow],
 ) -> None:
     """Write validated rows to the database as insert/update/delete.
 
@@ -186,7 +201,7 @@ def write_to_database(
             session.add(table(**row.model_dump(exclude={"mode"})))
 
         elif mode == UploadModes.UPDATE:
-            row_id = row.id
+            row_id = cast("UploadRowWithId", row).id  # guaranteed by validate_file_content
             existing = session.get(table, row_id)
             if existing is None:
                 raise HTTPException(
@@ -197,7 +212,7 @@ def write_to_database(
                 setattr(existing, field, value)
 
         elif mode == UploadModes.DELETE:
-            row_id = row.id
+            row_id = cast("UploadRowWithId", row).id  # guaranteed by validate_file_content
             existing = session.get(table, row_id)
             if existing is None:
                 raise HTTPException(

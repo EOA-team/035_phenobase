@@ -26,8 +26,9 @@ class UserStatus(StrEnum):
 
 class UserRead(BaseModel):
     """Response model for reading user data via API
-    Excludes sensitive/not needed information like key_hash and id."""
+    Excludes sensitive information like key_hash."""
 
+    id: int
     f_account: str | None
     firstname: str
     lastname: str
@@ -35,7 +36,6 @@ class UserRead(BaseModel):
     role: UserRole | None
     email: str
     # Note: key_hash is intentionally omitted for security reasons.
-    # Note: id is intentionally omitted as it is not needed for reading user data.
 
 
 class APIKeyHashRead(BaseModel):
