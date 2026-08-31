@@ -39,9 +39,10 @@ jobs:
       # unit tests with coverage. Integration tests only run on local IT infra, not on CI docker.
       - name: pytest with coverage
         run: pytest --cov=src/ --cov-fail-under=80 --without-integration --without-slow-integration
-        #Env vars are only needed for integration tests, which are not run on CI.
-        #Dummy Env vars added to avoid pytest complaining about missing env vars during import time.
         env:
+            PHENOBASE_ENV: CI_TEST # Makes sure a SQLITE database is used for testing instead of PostgreSQL, which is not available in CI/CD pipelines.
+            #Dummy Env vars added to avoid pytest complaining about missing env vars
+            # Please note: these vars are anyways only used for integration tests, which are not run on CI.
             SERVICE_USER: dummy
             NORMAL_USER: dummy
             SERVICE_PASSWORD: dummy

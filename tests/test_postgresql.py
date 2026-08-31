@@ -23,7 +23,7 @@ def phenobase_conn(request):
 
 
 @pytest.mark.integration_test
-@pytest.mark.parametrize("version", ["PostgreSQL 16.14"])
+@pytest.mark.parametrize("version", ["PostgreSQL 16.15"])
 def test_postgres_version(phenobase, version):
     """Check expected PostgreSQL version is installed on the server"""
     cur = phenobase.cursor()
