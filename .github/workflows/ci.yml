@@ -39,9 +39,20 @@ jobs:
       # unit tests with coverage. Integration tests only run on local IT infra, not on CI docker.
       - name: pytest with coverage
         run: pytest --cov=src/ --cov-fail-under=80 --without-integration --without-slow-integration
-        #Env vars are only needed for integration tests, which are not run on CI.
-        #Dummy Env vars added to avoid pytest complaining about missing env vars during import time.
         env:
+            PHENOBASE_ENV: ci_test # Makes sure a SQLITE database is used for testing instead of PostgreSQL, which is not available in CI/CD pipelines.
+            #API Test USERS
+            HANS_MUELLER_API_KEY: 91wo0yP0i3hs46nSYDhH-eCPak_z0v50nvsZdHObGuI
+            HANS_MUELLER_KEY_HASH: 9e1d709284aacaec4993625f6a3380ab3d9f73491a26d75a472e0ee4a7510c2b
+            HANS_MUELLER_ROLE: reader
+            MAX_MUSTERMANN_API_KEY: GgwWvWOelvAecuK2Sl95LhuYKIW4t1iZFla0D8uoHso
+            MAX_MUSTERMANN_KEY_HASH: c230c56cabe65e1dbdc0776ecddf8611b0b031b8b8a2af738e30b2cc0435593b
+            MAX_MUSTERMANN_ROLE: writer
+            SABRINA_SCHINDLER_API_KEY: zcDP7KNzzGf99hyaiFOqNlWx8Qx7rei-VEw4tToxDTk
+            SABRINA_SCHINDLER_KEY_HASH: 38313d4b5511623cc8245c5209bfe2412e0695d238c9b30b1a13ddf3cf5d7137
+            SABRINA_SCHINDLER_ROLE: admin
+            #Dummy Env vars added to avoid pytest complaining about missing env vars
+            # Please note: these vars are anyways only used for integration tests, which are not run on CI.
             SERVICE_USER: dummy
             NORMAL_USER: dummy
             SERVICE_PASSWORD: dummy

@@ -28,8 +28,10 @@ ruff format --diff  # Preview formatting diff
 
 ```bash
 # Run all (unit-tests)(integration-tests)(slow integration-tests)
-pytest -s -v           
-pytest --cov=src/ --cov-fail-under=80
+# Note: To include integration-tests in coverage add the --integration-cover FLAG
+pytest -s -v 
+pytest --cov=src --cov-report=term-missing 
+pytest --cov=src --integration-cover --cov-fail-under=80 -s -v
 
 # Run only (unit-tests)(integration-tests)
 pytest -s -v \
@@ -56,7 +58,7 @@ pytest --cov=src/ --cov-fail-under=80 \
 ```
 ### uvicorn 
 ```bash
-uvicorn src.scripts.api_dummy:app --host localhost --port 8000
+uvicorn src.main:app --host localhost --port 8000
 ```
 
 ### mlflow 
