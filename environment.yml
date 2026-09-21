@@ -30,5 +30,6 @@ dependencies:
   - rioxarray
   - dask
   - matplotlib
+  - hvplot
   - pip: 
   # pip-only packages go here if needed

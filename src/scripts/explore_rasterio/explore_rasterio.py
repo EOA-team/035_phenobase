@@ -4,6 +4,8 @@ import numpy as np
 import rioxarray
 import xarray as xr
 from matplotlib import pyplot as plt
+import hvplot.xarray 
+import panel as pn
 
 
 def fetch_wavelengths(da: xr.DataArray) -> np.ndarray:
@@ -52,6 +54,20 @@ if __name__ == "__main__":
     b550 = da.sel(wavelength=550, method="nearest")
     b550.plot.imshow(cmap="gray", robust=True)
     plt.savefig(Path(__file__).parent / "band_550_plot.png")
+
+
+    reflectance = da
+    browser= reflectance.hvplot.image(
+         x="x", y="y", groupby="band",     # <- slider over all 487 bands
+         cmap="gray", robust=True,
+         widget_type="scrubber", widget_location="bottom",
+         framewise =False,
+         width=1400, height=700,
+     )
+    pn.serve(browser, title="Orthomosaic Reflectance Browser", port=5006, show=True)
+
+
+
 
     # spec.sel(wavelength=slice(400,1000)).plot.line(x="wavelength", y="band", hue="band", marker="o")
     # b1 = da.sel(band=1)
