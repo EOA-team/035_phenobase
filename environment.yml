@@ -26,5 +26,9 @@ dependencies:
   - psycopg
   - pandas
   - pandas-stubs
+  - xarray
+  - rioxarray
+  - dask
+  - matplotlib
   - pip: 
   # pip-only packages go here if needed
