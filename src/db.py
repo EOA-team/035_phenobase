@@ -15,7 +15,7 @@ load_dotenv()
 class PhenobaseEnv(StrEnum):
     TEST = "test"
     PRODUCTION = "production"
-    CI_TEST = "ci_test"
+    TEST_SQLITE = "test_sqlite"
 
 
 class EngineType(StrEnum):
@@ -31,7 +31,7 @@ DB_NAME_LUT = {
 DB_ENGINE_LUT = {
     PhenobaseEnv.TEST: EngineType.POSTGRESQL,
     PhenobaseEnv.PRODUCTION: EngineType.POSTGRESQL,
-    PhenobaseEnv.CI_TEST: EngineType.SQLITE,
+    PhenobaseEnv.TEST_SQLITE: EngineType.SQLITE,
 }
 
 

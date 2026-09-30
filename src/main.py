@@ -161,9 +161,9 @@ def upload_file(
     write_to_database(session=session, table_name=table_name, rows=validated_rows)
 
     # Write the uploaded file to NAS for logging (skip for users table, because Users would be visible to anyone on NAS)
-    # Also skip if running in CI_TEST environment, because NAS is not available in CI/CD pipelines
+    # Also skip if running in TEST_SQLITE environment, because NAS is not available in CI/CD pipelines
     phenobase_env = os.getenv("PHENOBASE_ENV")
-    if table_name != UploadTables.USER and phenobase_env != PhenobaseEnv.CI_TEST:
+    if table_name != UploadTables.USER and phenobase_env != PhenobaseEnv.TEST_SQLITE:
         upload_csv = df.to_csv(index=False, sep=";", encoding="utf-8")
         write_file_to_nas(table_name=table_name, data=upload_csv.encode("utf-8"))
 

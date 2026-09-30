@@ -40,7 +40,7 @@ jobs:
       - name: pytest with coverage
         run: pytest --cov=src/ --cov-fail-under=80 --without-integration --without-slow-integration
         env:
-            PHENOBASE_ENV: ci_test # Makes sure a SQLITE database is used for testing instead of PostgreSQL, which is not available in CI/CD pipelines.
+            PHENOBASE_ENV: test_sqlite # Use SQLITE database for testing instead of PostgreSQL, which is not available in CI/CD pipelines.
             #API Test USERS
             HANS_MUELLER_API_KEY: 91wo0yP0i3hs46nSYDhH-eCPak_z0v50nvsZdHObGuI
             HANS_MUELLER_KEY_HASH: 9e1d709284aacaec4993625f6a3380ab3d9f73491a26d75a472e0ee4a7510c2b
