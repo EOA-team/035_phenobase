@@ -35,25 +35,3 @@ def phenobase_db_minimal():
         session.commit()
         yield session  # Provide the session to the test functions
         SQLModel.metadata.drop_all(engine)  # Clean up after tests
-
-
-# Fixture used by disabled_test_upload_via_sqlite.py to provide a minimal SQLite database for unit tests
-# Do not use this test anymore
-@pytest.fixture(scope="session")
-def phenobase_db_minimal_sqlite():
-    """Fixture to set up a minimal test database for unit tests."""
-    engine = get_engine_sqlite()
-
-    # Drop all tables to ensure a clean slate
-    SQLModel.metadata.drop_all(engine)
-    # Create all tables defined in the SQLModel metadata
-    SQLModel.metadata.create_all(engine)
-
-    with Session(engine) as session:
-        users = json.loads(
-            (SEEDS_FOLDER / "test_users.json").read_text(encoding="utf-8")
-        )
-        session.add_all([User(**user) for user in users])
-        session.commit()
-        yield session  # Provide the session to the test functions
-        SQLModel.metadata.drop_all(engine)  # Clean up after tests
