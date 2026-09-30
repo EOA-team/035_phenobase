@@ -22,7 +22,7 @@ dependencies:
   - smbprotocol
   - rasterio 
   - httpx2
-  - sqlmodel
+  - sqlmodel>=0.0.22  # Required for SQLAlchemy 2.1+ (released Sept 2026)
   - psycopg
   - pandas
   - pandas-stubs
