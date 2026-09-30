@@ -1,11 +1,6 @@
 Run Test Phenobase in detached mode
 ```bash
-docker compose -f docker-compose.test.yml up -d
-```
-
-Run Phenobase in detached mode 
-```bash
-docker compose -f docker-compose.prod.yml up -d
+docker compose up -d
 ```
 
 Status of Container
