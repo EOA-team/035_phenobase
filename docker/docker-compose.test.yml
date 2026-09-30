@@ -1,0 +1,11 @@
+# Starts a Test Postgres Database for development and testing, if  dedicated machine with real postgres access is not available
+services:
+  test_phenobase:
+    image: postgis/postgis:16-3.4
+    container_name: test_phenobase
+    ports:
+     - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test_phenobase
