@@ -1,6 +1,7 @@
 """Unit tests for the Phenobase Dataplatform API endpoints."""
 
 # Testclient allows to test API endpoints without having to run the server.
+import pytest
 import io
 import os
 from pathlib import Path
@@ -15,7 +16,7 @@ load_dotenv()
 
 TEST_CSVS_FOLDER = Path(__file__).parent / "test_csvs"
 
-
+@pytest.mark.unit
 def test_health_check():
     """Health endpoint returns 200 with status ok."""
     client = TestClient(app)
@@ -23,7 +24,7 @@ def test_health_check():
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
-
+@pytest.mark.unit
 def test_api_info():
     """Root endpoint returns 200 with correct API information."""
     client = TestClient(app)
@@ -34,7 +35,7 @@ def test_api_info():
     assert data["version"] == app.version
     assert data["description"] == app.description
 
-
+@pytest.mark.integration
 def test_auth_me_valid(phenobase_db_minimal):
     """Test the /auth/me endpoint with a valid API key."""
     client = TestClient(app)
@@ -51,7 +52,7 @@ def test_auth_me_valid(phenobase_db_minimal):
     assert data["email"] == "hans.mueller@example.com"
     assert "key_hash" not in data  # Ensure key_hash is not returned in the response
 
-
+@pytest.mark.integration
 def test_auth_me_invalid(phenobase_db_minimal):
     """Test the /auth/me endpoint with an invalid API key."""
     client = TestClient(app)
@@ -60,7 +61,7 @@ def test_auth_me_invalid(phenobase_db_minimal):
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid API key"}
 
-
+@pytest.mark.integration
 def test_generate_api_key(phenobase_db_minimal):
     """Test the /admin/generate-api-key endpoint."""
     client = TestClient(app)
@@ -75,7 +76,7 @@ def test_generate_api_key(phenobase_db_minimal):
     response = client.get("/admin/generate-api-key", headers=headers)
     assert response.status_code == 403
 
-
+@pytest.mark.integration
 def test_insert_and_delete(phenobase_db_minimal):
     """Test the POST /data/upload/{table_name} with INSERT and DELETE operations,
     then verify with GET /data/{table_name}"""

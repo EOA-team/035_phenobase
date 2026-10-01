@@ -4,14 +4,14 @@
 Note: tested with open() , because smbclient.open_file() requires a NAS connection
 skbclient.open_file() is tested in integration_tests in test_nas.py
 """
-
+import pytest
 from src.file_utils import get_sha256sum, get_sha256sum_last_chunk, write_random_file
 from src.nas_helper import FileSizeUnit, build_unc_path
 
 FILESIZE = FileSizeUnit.MB * 10
 CHUNKSIZE = FileSizeUnit.MB * 1
 
-
+@pytest.mark.unit
 def test_build_unc_path():
     hostname = "server"
     share = "share"
@@ -19,7 +19,7 @@ def test_build_unc_path():
     expected_path = r"\\server\share\folder"
     assert build_unc_path(hostname, share, folder) == expected_path
 
-
+@pytest.mark.unit
 def test_verify_filewrite_with_checksum(tmp_path):
     """Tests the full write-then-read checksum"""
     test_file = tmp_path / "test.bin"

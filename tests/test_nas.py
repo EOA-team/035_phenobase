@@ -69,7 +69,8 @@ def testfile():
         smbclient.reset_connection_cache()
 
 
-@pytest.mark.integration_test
+@pytest.mark.integration
+@pytest.mark.fola
 def test_write_file(testfile):
     """Only Service User should be able to write a file on NAS,"""
     # Service user write to NAS (done in fixture)
@@ -89,7 +90,8 @@ def test_write_file(testfile):
     )
 
 
-@pytest.mark.integration_test
+@pytest.mark.integration
+@pytest.mark.fola
 def test_read_file(testfile):
     """Both Users should be able to read a file on NAS"""
     nas_filepath, expected_sha256sum = testfile
@@ -103,7 +105,8 @@ def test_read_file(testfile):
         assert get_sha256sum(stream=f, chunk_size=CHUNKSIZE) == expected_sha256sum
 
 
-@pytest.mark.integration_test
+@pytest.mark.integration
+@pytest.mark.fola
 def test_delete_file(testfile):
     """Only Service User should be able to delete a file on NAS"""
     nas_filepath, _ = testfile
@@ -120,7 +123,8 @@ def test_delete_file(testfile):
     assert not smbclient.path.exists(nas_filepath)
 
 
-@pytest.mark.integration_test
+@pytest.mark.integration
+@pytest.mark.fola
 def test_rename_file(testfile):
     """Normal user should not be able move a file on NAS"""
     nas_filepath, _ = testfile
@@ -142,7 +146,8 @@ def test_rename_file(testfile):
     smbclient.remove(new_nas_filepath)  # Clean up after test
 
 
-@pytest.mark.integration_test
+@pytest.mark.integration
+@pytest.mark.fola
 def test_create_folder():
     """Only Service User should be able to create a folder on NAS"""
     folder_name = f"pytest_{os.urandom(4).hex()}"
@@ -161,7 +166,8 @@ def test_create_folder():
     smbclient.rmdir(new_folder)  # Clean up after test
 
 
-@pytest.mark.integration_test
+@pytest.mark.integration
+@pytest.mark.fola
 def test_copy_file_nas_to_nas(testfile):
     """Only Service User should be able to copy a file from NAS to NAS"""
     nas_filepath, expected_sha256sum = testfile
@@ -184,7 +190,8 @@ def test_copy_file_nas_to_nas(testfile):
     smbclient.remove(copy_nas_filepath)  # Clean up after test
 
 
-@pytest.mark.integration_test
+@pytest.mark.integration
+@pytest.mark.fola
 def test_copy_file_nas_to_local(testfile, tmp_path):
     """Both users should be able to copy a file from NAS to local path"""
     nas_filepath, expected_sha256sum = testfile
