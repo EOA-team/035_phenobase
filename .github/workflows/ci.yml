@@ -7,7 +7,39 @@ on:
     branches: [main]
 
 jobs:
-  quality-checks:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash -l {0}   # ensures conda is activated for all steps
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # create conda env from environment.yml
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          environment-file: environment.yml
+          auto-activate: false
+          use-mamba: true # Faster Download
+          cache-environment: true
+          cache-environment-key: ${{ hashFiles('environment.yml') }} # to check if environment.yml has changed
+
+      # static type checking
+      - name: mypy
+        run: mypy .
+
+      # lint + complexity + security (replaces pylint, bandit, radon cc)
+      - name: ruff check
+        run: ruff check
+
+      # formatting check (replaces autopep8)
+      - name: ruff format
+        run: ruff format --check
+
+
+  tests:
     runs-on: ubuntu-latest
 
     defaults:
@@ -30,7 +62,6 @@ jobs:
           --health-retries 10
 
     steps:
-      # checkout repo
       - uses: actions/checkout@v5
 
       # create conda env from environment.yml
@@ -38,18 +69,9 @@ jobs:
         with:
           environment-file: environment.yml
           auto-activate: false
-
-      # static type checking
-      - name: mypy
-        run: mypy .
-
-      # lint + complexity + security (replaces pylint, bandit, radon cc)
-      - name: ruff check
-        run: ruff check 
-
-      # formatting check (replaces autopep8)
-      - name: ruff format
-        run: ruff format --check 
+          use-mamba: true # Faster Download
+          cache-environment: true
+          cache-environment-key: ${{ hashFiles('environment.yml') }} # to check if environment.yml has changed
 
       # unit tests with coverage. Integration tests only run on local IT infra, not on CI docker.
       - name: pytest with coverage
