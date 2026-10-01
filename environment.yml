@@ -25,5 +25,5 @@ dependencies:
   - psycopg
   - pandas
   - pandas-stubs
-  - pip: 
+  #- pip:
   # pip-only packages go here if needed
