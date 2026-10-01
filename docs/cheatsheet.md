@@ -27,28 +27,14 @@ ruff format --diff  # Preview formatting diff
 ### Pytest
 
 ```bash
-# Run all (unit-tests)(integration-tests)(slow integration-tests)
-# Note: To include integration-tests in coverage add the --integration-cover FLAG
+# Run all tests 
 pytest -s -v 
 pytest --cov=src --cov-report=term-missing 
-pytest --cov=src --integration-cover --cov-fail-under=80 -s -v
+pytest --cov=src --cov-fail-under=80 -s -v
 
-# Run only (unit-tests)(integration-tests)
-pytest -s -v \
---without-slow-integration       
-
-pytest --cov=src/ --cov-fail-under=80 \
---without-slow-integration 
-
-# Run only (unit-tests)
-pytest -s -v \
---without-slow-integration \
---without-integration
-
-pytest --cov=src/ --cov-fail-under=80 \
---without-slow-integration \
---without-integration
-
+# Run test that do not rely on Fola Infrastructure  
+pytest -s -v -m "not fola"
+pytest --cov=src/ --cov-fail-under=80 -m "not fola"
 ```
 
 ### start traefik(powershell)

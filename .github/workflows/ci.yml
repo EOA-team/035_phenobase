@@ -83,9 +83,9 @@ jobs:
           auto-activate: false
           use-mamba: true # Faster Download
 
-      # unit tests with coverage. Integration tests only run on local IT infra, not on CI docker.
+      # Test Coverage excluding  test that only run on FOLA infrastructure
       - name: pytest with coverage
-        run: pytest --cov=src/ --cov-fail-under=80 --without-integration --without-slow-integration
+        run: pytest --cov=src/ --cov-fail-under=80 -m "not fola"
         env:
             PHENOBASE_ENV: test_docker # Supports test_docker and test_sqlite
             #Docker PostgreSQL Database

@@ -59,6 +59,7 @@ def test_postgis_version(phenobase, version):
     assert version in result
     cur.close()
 
+
 @pytest.mark.integration
 @pytest.mark.fola
 @pytest.mark.parametrize("expected_dbs", ["phenobase"])

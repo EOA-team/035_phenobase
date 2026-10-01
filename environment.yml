@@ -7,7 +7,6 @@ dependencies:
   - ruff
   - pytest
   - pytest-cov
-  - pytest-integration
   - pip
   - python-dotenv
   - psycopg2
