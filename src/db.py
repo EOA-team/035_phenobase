@@ -18,9 +18,11 @@ class PhenobaseEnv(StrEnum):
     TEST_SQLITE = "test_sqlite"
     TEST_DOCKER = "test_docker"
 
+
 class EngineType(StrEnum):
     POSTGRESQL = "postgresql"
     SQLITE = "sqlite"
+
 
 DB_NAME_LUT = {
     PhenobaseEnv.PRODUCTION: "phenobase",
@@ -44,6 +46,7 @@ def get_database_name(phenobase_env: PhenobaseEnv) -> str:
 def get_engine_type(phenobase_env: PhenobaseEnv) -> str:
     return DB_ENGINE_LUT[phenobase_env]
 
+
 def get_engine_postgresql():
     """Create a PostgreSQL engine to connect to "test" or "production" database.
     Used for:
@@ -56,7 +59,7 @@ def get_engine_postgresql():
     dbname = get_database_name(phenobase_env)
     print(f"Using database: {dbname}")
 
-    if phenobase_env  == PhenobaseEnv.TEST_DOCKER:
+    if phenobase_env == PhenobaseEnv.TEST_DOCKER:
         user = os.getenv("DOCKER_DB_USER")
         password = os.getenv("DOCKER_DB_PASSWORD")
         host = os.getenv("DOCKER_DB_HOST")

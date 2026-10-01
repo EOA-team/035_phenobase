@@ -163,7 +163,10 @@ def upload_file(
     # Write the uploaded file to NAS for logging (skip for users table, because Users would be visible to anyone on NAS)
     # Also only run in Fola Environment (Production or Test), not in Docker or SQLite
     phenobase_env = os.getenv("PHENOBASE_ENV")
-    if table_name != UploadTables.USER and phenobase_env in (PhenobaseEnv.PRODUCTION, PhenobaseEnv.TEST):
+    if table_name != UploadTables.USER and phenobase_env in (
+        PhenobaseEnv.PRODUCTION,
+        PhenobaseEnv.TEST,
+    ):
         upload_csv = df.to_csv(index=False, sep=";", encoding="utf-8")
         write_file_to_nas(table_name=table_name, data=upload_csv.encode("utf-8"))
 

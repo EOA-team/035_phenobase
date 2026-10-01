@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 
 import pytest
-from sqlmodel import Session, SQLModel
+from sqlmodel import SQLModel
 
-from src.db import PhenobaseEnv, get_database_name, get_engine_sqlite, open_db_session
+from src.db import PhenobaseEnv, get_database_name, open_db_session
 from src.models.tables.user import User
 
 SEEDS_FOLDER = Path(__file__).resolve().parent.parent / "seeds"
