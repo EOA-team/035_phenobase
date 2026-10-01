@@ -19,7 +19,7 @@ def connect_to_database(dbname: str = "db1") -> connection:
         conn = psycopg2.connect(
             dbname=dbname,
             user="user",
-            password="password",# noqa: S106
+            password="password",  # noqa: S106
             host="127.0.0.1",
             port="5432",
         )
