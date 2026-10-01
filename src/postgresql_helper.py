@@ -14,11 +14,22 @@ load_dotenv()  # Load environment variables from .env file
 def connect_to_database(dbname: str = "db1") -> connection:
     """Connect to a PostgreSQL database ,
     By Default connects to "db1" which is a test database provided by IT"""
-    conn = psycopg2.connect(
-        dbname=dbname,
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT"),
-    )
+
+    if os.getenv("INFRA") == "docker":
+        conn = psycopg2.connect(
+            dbname=dbname,
+            user="user",
+            password="password",
+            host="127.0.0.1",
+            port="5432",
+        )
+
+    else:
+        conn = psycopg2.connect(
+            dbname=dbname,
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("DB_HOST"),
+            port=os.getenv("DB_PORT"),
+        )
     return conn

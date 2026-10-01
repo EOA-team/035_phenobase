@@ -2,10 +2,14 @@
 services:
   test_phenobase:
     image: postgis/postgis:16-3.4
-    container_name: test_phenobase
+    container_name: phenobase_docker
     ports:
      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: test_phenobase
+    volumes:
+      - ./init-scripts:/docker-entrypoint-initdb.d
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
