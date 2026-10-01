@@ -13,25 +13,27 @@ load_dotenv()
 
 
 class PhenobaseEnv(StrEnum):
-    TEST = "test"
     PRODUCTION = "production"
+    TEST = "test"
     TEST_SQLITE = "test_sqlite"
-
+    TEST_DOCKER = "test_docker"
 
 class EngineType(StrEnum):
     POSTGRESQL = "postgresql"
     SQLITE = "sqlite"
 
-
 DB_NAME_LUT = {
-    PhenobaseEnv.TEST: "test_phenobase",
     PhenobaseEnv.PRODUCTION: "phenobase",
+    PhenobaseEnv.TEST: "test_phenobase",
+    PhenobaseEnv.TEST_DOCKER: "test_phenobase",
+    # SLite is in-memory, so no database name is needed
 }
 
 DB_ENGINE_LUT = {
     PhenobaseEnv.TEST: EngineType.POSTGRESQL,
     PhenobaseEnv.PRODUCTION: EngineType.POSTGRESQL,
     PhenobaseEnv.TEST_SQLITE: EngineType.SQLITE,
+    PhenobaseEnv.TEST_DOCKER: EngineType.POSTGRESQL,
 }
 
 
@@ -41,7 +43,6 @@ def get_database_name(phenobase_env: PhenobaseEnv) -> str:
 
 def get_engine_type(phenobase_env: PhenobaseEnv) -> str:
     return DB_ENGINE_LUT[phenobase_env]
-
 
 def get_engine_postgresql():
     """Create a PostgreSQL engine to connect to "test" or "production" database.
@@ -53,13 +54,21 @@ def get_engine_postgresql():
 
     phenobase_env = PhenobaseEnv(os.getenv("PHENOBASE_ENV"))
     dbname = get_database_name(phenobase_env)
-
     print(f"Using database: {dbname}")
 
-    user = os.getenv("DB_USER")
-    password = os.getenv("DB_PASSWORD")
-    host = os.getenv("DB_HOST")
-    port = os.getenv("DB_PORT")
+    if phenobase_env  == PhenobaseEnv.TEST_DOCKER:
+        user = os.getenv("DOCKER_DB_USER")
+        password = os.getenv("DOCKER_DB_PASSWORD")
+        host = os.getenv("DOCKER_DB_HOST")
+        port = os.getenv("DOCKER_DB_PORT")
+
+    elif phenobase_env in [PhenobaseEnv.TEST, PhenobaseEnv.PRODUCTION]:
+        user = os.getenv("DB_USER")
+        password = os.getenv("DB_PASSWORD")
+        host = os.getenv("DB_HOST")
+        port = os.getenv("DB_PORT")
+    else:
+        raise ValueError(f"Unsupported environment: {phenobase_env}")
 
     url = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{dbname}"
     engine = create_engine(
