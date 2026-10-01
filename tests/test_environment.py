@@ -12,7 +12,7 @@ def test_production_env(monkeypatch):
     print(f"Engine URL: {engine.url.database}")
     assert engine.url.database == get_database_name(PhenobaseEnv.PRODUCTION)
 
-    
+
 @pytest.mark.integration
 @pytest.mark.fola
 def test_test_env(monkeypatch):
