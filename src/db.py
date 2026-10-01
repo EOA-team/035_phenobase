@@ -11,9 +11,6 @@ from sqlmodel import Session
 
 load_dotenv()
 
-class database_settings:
-
-
 
 class PhenobaseEnv(StrEnum):
     PRODUCTION = "production"
