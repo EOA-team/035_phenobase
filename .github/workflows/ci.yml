@@ -17,14 +17,19 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      #Cache for Conda Folder to speed up CI
+      - name: Cache Conda env
+        uses: actions/cache@v4
+        with:
+          path: /usr/share/miniconda3/envs
+          key: conda-${{ runner.os }}-${{ hashFiles('environment.yml') }}
+
       # create conda env from environment.yml
       - uses: conda-incubator/setup-miniconda@v4
         with:
           environment-file: environment.yml
           auto-activate: false
           use-mamba: true # Faster Download
-          cache-environment: true
-          cache-environment-key: ${{ hashFiles('environment.yml') }} # to check if environment.yml has changed
 
       # static type checking
       - name: mypy
@@ -64,14 +69,19 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      #Cache for Conda Folder to speed up CI
+      - name: Cache Conda env
+        uses: actions/cache@v4
+        with:
+          path: /usr/share/miniconda3/envs
+          key: conda-${{ runner.os }}-${{ hashFiles('environment.yml') }}
+
       # create conda env from environment.yml
       - uses: conda-incubator/setup-miniconda@v4
         with:
           environment-file: environment.yml
           auto-activate: false
           use-mamba: true # Faster Download
-          cache-environment: true
-          cache-environment-key: ${{ hashFiles('environment.yml') }} # to check if environment.yml has changed
 
       # unit tests with coverage. Integration tests only run on local IT infra, not on CI docker.
       - name: pytest with coverage
