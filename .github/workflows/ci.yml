@@ -56,8 +56,12 @@ jobs:
         run: pytest --cov=src/ --cov-fail-under=80 --without-integration --without-slow-integration
         env:
             PHENOBASE_ENV: test_docker # Supports test_docker and test_sqlite
+            #Docker PostgreSQL Database
+            DOCKER_DB_HOST: 127.0.0.1
+            DOCKER_DB_PORT: 5432
             DOCKER_DB_USER: user
             DOCKER_DB_PASSWORD: password
+            #API Test USERS
             HANS_MUELLER_API_KEY: 91wo0yP0i3hs46nSYDhH-eCPak_z0v50nvsZdHObGuI
             HANS_MUELLER_KEY_HASH: 9e1d709284aacaec4993625f6a3380ab3d9f73491a26d75a472e0ee4a7510c2b
             HANS_MUELLER_ROLE: reader
