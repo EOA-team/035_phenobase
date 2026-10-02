@@ -14,24 +14,11 @@ jobs:
       run:
         shell: bash -l {0}   # ensures conda is activated for all steps
 
-    #Start Postgres Database with Postgis installed
-    services:
-      test_phenobase:
-        image: postgis/postgis:16-3.4
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: test_phenobase
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U user -d test_phenobase"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
     steps:
       - uses: actions/checkout@v5
+
+      - name: Start postgres+postgis docker container
+        run: docker compose -f docker/docker-compose.yml up -d --wait
 
       - name: Setup Micromamba
         uses: mamba-org/setup-micromamba@v2
