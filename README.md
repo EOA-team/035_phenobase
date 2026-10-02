@@ -29,3 +29,36 @@ conda activate 035_phenobase
 ├── environment.yml
 └── README.md
 ```
+
+## Run Local
+
+**1. Install Docker Compose **
+https://docs.docker.com/compose/install/
+
+**2. Create PostgreSQL Container
+```bash
+cd docker
+docker compose up -d
+```
+**3. Set your environemt in .env file**
+```bash
+cd docker
+docker compose up -d
+cd ..
+```
+**4. Run Tests (Independent of Agroscope Fola Infrastructure)**
+```bash
+pytest -s -v -m "not ags_fola"
+```
+
+**5. Start Phenobase **
+```bash
+uvicorn src.main:app --host localhost --port 8000
+```
+runs on http://localhost:8000/
+
+**5. Start Mlflow **
+```bash
+mlflow server --host localhost --port 5000
+```
+runs on http://localhost:5000/
