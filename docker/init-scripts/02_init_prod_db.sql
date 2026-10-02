@@ -1,0 +1,3 @@
+CREATE DATABASE phenobase;
+\c phenobase
+CREATE EXTENSION IF NOT EXISTS postgis;

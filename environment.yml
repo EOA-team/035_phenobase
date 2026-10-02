@@ -7,12 +7,9 @@ dependencies:
   - ruff
   - pytest
   - pytest-cov
-  - pytest-integration
   - pip
   - python-dotenv
-  - psycopg2
   - sqlalchemy
-  - types-psycopg2
   - fastapi
   - uvicorn
   - httpx
@@ -26,5 +23,5 @@ dependencies:
   - psycopg
   - pandas
   - pandas-stubs
-  - pip: 
+  #- pip:
   # pip-only packages go here if needed

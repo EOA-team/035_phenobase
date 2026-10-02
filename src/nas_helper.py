@@ -1,29 +1,29 @@
 """File system Utilities for SMB/CIFS file shares"""
 
-import os
 import shutil
 from enum import IntEnum, StrEnum
 from pathlib import Path
 
 import smbclient
-from dotenv import load_dotenv
 from smbclient import register_session, reset_connection_cache
 
-load_dotenv()  # Load environment variables from .env file
+from src.settings import Settings
+
+settings = Settings()
 
 
 class User(StrEnum):
     """Available User Types"""
 
-    SERVICE = os.environ["SERVICE_USER"]
-    NORMAL = os.environ["NORMAL_USER"]
+    SERVICE = settings.fola.service_user
+    NORMAL = settings.fola.normal_user
 
 
 class Password(StrEnum):
     """Available User Types"""
 
-    SERVICE = os.environ["SERVICE_PASSWORD"]
-    NORMAL = os.environ["NORMAL_PASSWORD"]
+    SERVICE = settings.fola.service_password.get_secret_value()
+    NORMAL = settings.fola.normal_password.get_secret_value()
 
 
 class FileSizeUnit(IntEnum):
@@ -41,9 +41,9 @@ DEFAULT_CHUNK_SIZE = 1 * FileSizeUnit.MB
 def connect_to_nas(user_type: User, password: Password):
     """Connect to the NAS using the specified user type and password."""
     reset_connection_cache()
-    user = user_type.value + "@" + os.environ["FOLA_DOMAIN"]
+    user = user_type.value + "@" + settings.fola.base_domain
     register_session(
-        server=os.environ["NAS_RECKENHOLZ"],
+        server=settings.storage.host,
         username=user,
         password=password.value,
     )

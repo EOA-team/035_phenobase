@@ -1,11 +1,9 @@
-import os
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Protocol, cast
 
 import pandas as pd
 import smbclient
-from dotenv import load_dotenv
 from fastapi import HTTPException, UploadFile, status
 from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -28,6 +26,7 @@ from src.nas_helper import (
     build_unc_path,
     connect_to_nas,
 )
+from src.settings import DeployStage, Infrastructure, Settings
 
 
 class UploadRow(Protocol):
@@ -44,13 +43,18 @@ class UploadRowWithId(UploadRow, Protocol):
     id: int
 
 
-load_dotenv()
-phenobase_env = os.environ["PHENOBASE_ENV"]
-NAS_UPLOAD_FOLDER = rf"drone\phenobase\{phenobase_env}\uploads"
+def build_local_upload_path(base_path: str, deploy_stage: DeployStage) -> Path:
+    """Build the upload path on local storage."""
+    return Path(base_path) / deploy_stage.value / "uploads"
 
 
-def build_nas_upload_filename(table_name: UploadTables) -> str:
-    """Build a filename for uploading to the NAS
+def build_unc_upload_path(base_path: str, deploy_stage: DeployStage) -> PureWindowsPath:
+    """Build the upload path on the NAS. Always uses backslashes, whatever the OS."""
+    return PureWindowsPath(base_path) / deploy_stage.value / "uploads"
+
+
+def build_upload_filename(table_name: UploadTables) -> str:
+    """Build a filename for upload
     based on the current timestamp (UTC), table name, and file type."""
     now = datetime.now(tz=UTC)
     date_part = now.strftime("%Y%m%d_%H%M%S")  # 20260822_185612
@@ -164,19 +168,46 @@ def validate_file_content(
     return validated
 
 
-def write_file_to_nas(table_name: UploadTables, data: bytes) -> None:
-    """Upload a any file to the NAS"""
-    upload_path = build_unc_path(
-        hostname=os.getenv("NAS_RECKENHOLZ"),
-        share="Data-EODrone",
-        folder=NAS_UPLOAD_FOLDER,
-    )
-    filename = build_nas_upload_filename(UploadTables(table_name))
-    upload_file_path = Path(upload_path) / filename
+def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
+    """Upload a file to the storage location (NAS or local) based on the infrastructure setting."""
 
-    connect_to_nas(user_type=NasUser.SERVICE, password=NasPw.SERVICE)
-    with smbclient.open_file(upload_file_path, "wb", encoding="utf-8") as f:
-        f.write(data)
+    def _write_to_local_storage(path: Path, data: bytes) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+
+    def _write_to_nas_storage(path: PureWindowsPath, data: bytes) -> None:
+        connect_to_nas(user_type=NasUser.SERVICE, password=NasPw.SERVICE)
+        smbclient.makedirs(str(path.parent), exist_ok=True)  # create folder if missing
+        with smbclient.open_file(
+            str(path), mode="wb"
+        ) as f:  # no encoding in binary mode
+            f.write(data)
+
+    settings = Settings()
+    filename = build_upload_filename(UploadTables(table_name))
+
+    if settings.infrastructure == Infrastructure.LOCAL:
+        local_upload_path = build_local_upload_path(
+            base_path=settings.storage.local_path,
+            deploy_stage=settings.deploy_stage,
+        )
+        _write_to_local_storage(local_upload_path / filename, data)
+    elif settings.infrastructure == Infrastructure.AGS_FOLA:
+        unc_path = build_unc_path(
+            hostname=settings.storage.host,
+            share=settings.storage.share,
+            folder=settings.storage.folder,
+        )
+        nas_upload_path = build_unc_upload_path(
+            base_path=unc_path,
+            deploy_stage=settings.deploy_stage,
+        )
+        _write_to_nas_storage(nas_upload_path / filename, data)
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unsupported infrastructure: {settings.infrastructure}",
+        )
 
 
 def write_to_database(
@@ -265,3 +296,19 @@ def build_upload_csv_template(table_name: UploadTables) -> str:
     rows = [columns, insert_row, update_row, delete_row]
 
     return "\n".join(";".join(row) for row in rows) + "\n"
+
+
+if __name__ == "__main__":
+    settings = Settings()
+    deploy_stage = settings.deploy_stage
+    infrastructure = settings.infrastructure
+
+    local_path = settings.storage.local_path
+    unc_path = build_unc_path(
+        hostname=settings.storage.host,
+        share=settings.storage.share,
+        folder=settings.storage.folder,
+    )
+
+    print(build_local_upload_path(base_path=local_path, deploy_stage=deploy_stage))
+    print(build_unc_upload_path(base_path=unc_path, deploy_stage=deploy_stage))

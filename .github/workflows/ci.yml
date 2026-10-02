@@ -14,15 +14,31 @@ jobs:
       run:
         shell: bash -l {0}   # ensures conda is activated for all steps
 
+    #Start Postgres Database with Postgis installed
+    services:
+      test_phenobase:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: test_phenobase
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U user -d test_phenobase"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
-      # checkout repo
       - uses: actions/checkout@v5
 
-      # create conda env from environment.yml
-      - uses: conda-incubator/setup-miniconda@v4
+      - name: Setup Micromamba
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: environment.yml
-          auto-activate: false
+          environment-name: 035_phenobase
+          cache-environment: true
 
       # static type checking
       - name: mypy
@@ -30,32 +46,17 @@ jobs:
 
       # lint + complexity + security (replaces pylint, bandit, radon cc)
       - name: ruff check
-        run: ruff check 
+        run: ruff check
 
       # formatting check (replaces autopep8)
       - name: ruff format
-        run: ruff format --check 
+        run: ruff format --check
+      
+      # Load minimal env vars for pytest to run (only test credentatial)
+      - name: Get Env Vars
+        run: |
+          cp .env.template .env
 
-      # unit tests with coverage. Integration tests only run on local IT infra, not on CI docker.
+      # Test Coverage excluding  test that only run on FOLA infrastructure
       - name: pytest with coverage
-        run: pytest --cov=src/ --cov-fail-under=80 --without-integration --without-slow-integration
-        env:
-            PHENOBASE_ENV: ci_test # Makes sure a SQLITE database is used for testing instead of PostgreSQL, which is not available in CI/CD pipelines.
-            #API Test USERS
-            HANS_MUELLER_API_KEY: 91wo0yP0i3hs46nSYDhH-eCPak_z0v50nvsZdHObGuI
-            HANS_MUELLER_KEY_HASH: 9e1d709284aacaec4993625f6a3380ab3d9f73491a26d75a472e0ee4a7510c2b
-            HANS_MUELLER_ROLE: reader
-            MAX_MUSTERMANN_API_KEY: GgwWvWOelvAecuK2Sl95LhuYKIW4t1iZFla0D8uoHso
-            MAX_MUSTERMANN_KEY_HASH: c230c56cabe65e1dbdc0776ecddf8611b0b031b8b8a2af738e30b2cc0435593b
-            MAX_MUSTERMANN_ROLE: writer
-            SABRINA_SCHINDLER_API_KEY: zcDP7KNzzGf99hyaiFOqNlWx8Qx7rei-VEw4tToxDTk
-            SABRINA_SCHINDLER_KEY_HASH: 38313d4b5511623cc8245c5209bfe2412e0695d238c9b30b1a13ddf3cf5d7137
-            SABRINA_SCHINDLER_ROLE: admin
-            #Dummy Env vars added to avoid pytest complaining about missing env vars
-            # Please note: these vars are anyways only used for integration tests, which are not run on CI.
-            SERVICE_USER: dummy
-            NORMAL_USER: dummy
-            SERVICE_PASSWORD: dummy
-            NORMAL_PASSWORD: dummy
-            FOLA_DOMAIN: dummy
-            NAS_RECKENHOLZ: dummy
+        run: pytest --cov=src/ --cov-fail-under=80 -m "not ags_fola"
