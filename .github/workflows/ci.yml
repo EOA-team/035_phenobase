@@ -32,6 +32,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+      - name: Init databases
+        run: |
+          cid=$(docker ps -qf name=test_phenobase)
+          docker exec "$cid" psql -U user -d postgres -c "CREATE DATABASE phenobase;"
+          docker exec "$cid" psql -U user -d test_phenobase -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+          docker exec "$cid" psql -U user -d phenobase -c "CREATE EXTENSION IF NOT EXISTS postgis;"
 
       - name: Setup Micromamba
         uses: mamba-org/setup-micromamba@v2
