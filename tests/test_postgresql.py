@@ -9,7 +9,7 @@ from src.db import get_engine_postgresql
 from src.settings import Infrastructure, Settings
 
 EXPECTED_VERSIONS = {
-    Infrastructure.LOCAL: {"postgres": "PostgreSQL 16.3", "postgis": "3.4"},
+    Infrastructure.LOCAL: {"postgres": "PostgreSQL 16.4", "postgis": "3.4"},
     Infrastructure.AGS_FOLA: {"postgres": "PostgreSQL 16.15", "postgis": "3.4"},
 }
 
