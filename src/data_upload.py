@@ -1,11 +1,9 @@
-import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol, cast
 
 import pandas as pd
 import smbclient
-from dotenv import load_dotenv
 from fastapi import HTTPException, UploadFile, status
 from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -28,6 +26,7 @@ from src.nas_helper import (
     build_unc_path,
     connect_to_nas,
 )
+from src.settings import Settings
 
 
 class UploadRow(Protocol):
@@ -44,13 +43,24 @@ class UploadRowWithId(UploadRow, Protocol):
     id: int
 
 
-load_dotenv()
-phenobase_env = os.environ["PHENOBASE_ENV"]
-NAS_UPLOAD_FOLDER = rf"drone\phenobase\{phenobase_env}\uploads"
+def build_upload_path() -> str:
+    """Build the upload path based on settings"""
+    settings = Settings()
+    deploy_stage = settings.deploy_stage
+
+    phenobase_root = build_unc_path(
+        hostname=settings.storage.host,
+        share=settings.storage.share,
+        folder=settings.storage.folder,
+    )
+
+    upload_folder = phenobase_root + "\\" + deploy_stage.value + "\\uploads"
+
+    return upload_folder
 
 
-def build_nas_upload_filename(table_name: UploadTables) -> str:
-    """Build a filename for uploading to the NAS
+def build_upload_filename(table_name: UploadTables) -> str:
+    """Build a filename for upload
     based on the current timestamp (UTC), table name, and file type."""
     now = datetime.now(tz=UTC)
     date_part = now.strftime("%Y%m%d_%H%M%S")  # 20260822_185612
@@ -164,14 +174,10 @@ def validate_file_content(
     return validated
 
 
-def write_file_to_nas(table_name: UploadTables, data: bytes) -> None:
-    """Upload a any file to the NAS"""
-    upload_path = build_unc_path(
-        hostname=os.getenv("NAS_RECKENHOLZ"),
-        share="Data-EODrone",
-        folder=NAS_UPLOAD_FOLDER,
-    )
-    filename = build_nas_upload_filename(UploadTables(table_name))
+def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
+    """Upload a file to the storage"""
+    upload_path = build_upload_path()
+    filename = build_upload_filename(UploadTables(table_name))
     upload_file_path = Path(upload_path) / filename
 
     connect_to_nas(user_type=NasUser.SERVICE, password=NasPw.SERVICE)

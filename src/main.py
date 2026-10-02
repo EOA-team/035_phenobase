@@ -2,7 +2,6 @@
 Docstring for src.main
 """
 
-import os
 from typing import Annotated
 
 from dotenv import load_dotenv
@@ -16,10 +15,10 @@ from src.data_upload import (
     read_upload_file,
     validate_file_content,
     validate_uploaded_file,
-    write_file_to_nas,
+    write_file_to_storage,
     write_to_database,
 )
-from src.db import PhenobaseEnv, get_db_session
+from src.db import get_db_session
 from src.db_utils import get_db_table_as_pd, table_is_empty
 from src.models.registry import UploadTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
@@ -160,15 +159,8 @@ def upload_file(
     validated_rows = validate_file_content(df=df, table_name=table_name)
     write_to_database(session=session, table_name=table_name, rows=validated_rows)
 
-    # Write the uploaded file to NAS for logging (skip for users table, because Users would be visible to anyone on NAS)
-    # Also only run in Fola Environment (Production or Test), not in Docker or SQLite
-    phenobase_env = os.getenv("PHENOBASE_ENV")
-    if table_name != UploadTables.USER and phenobase_env in (
-        PhenobaseEnv.PRODUCTION,
-        PhenobaseEnv.TEST,
-    ):
-        upload_csv = df.to_csv(index=False, sep=";", encoding="utf-8")
-        write_file_to_nas(table_name=table_name, data=upload_csv.encode("utf-8"))
+    upload_csv = df.to_csv(index=False, sep=";", encoding="utf-8")
+    write_file_to_storage(table_name=table_name, data=upload_csv.encode("utf-8"))
 
     return Response(
         content=f"File {upload_file.filename}  successfully commited to Data Platform",

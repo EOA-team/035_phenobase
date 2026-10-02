@@ -29,6 +29,15 @@ class DatabaseConfig(BaseSettings):
     name_test: DatabaseName  # DB_NAME_TEST
 
 
+class StorageConfig(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="STORAGE_", env_file=".env", extra="ignore"
+    )
+    host: str  # STORAGE_HOST
+    share: str  # STORAGE_SHARE
+    folder: str  # PHENOBASE_ROOT
+
+
 class Settings(BaseSettings):
     """Reads INFRASTRUCTURE and DEPLOY_STAGE from env / .env."""
 
@@ -36,6 +45,7 @@ class Settings(BaseSettings):
     infrastructure: Infrastructure
     deploy_stage: DeployStage
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
+    storage: StorageConfig = Field(default_factory=StorageConfig)
 
 
 if __name__ == "__main__":
@@ -48,3 +58,8 @@ if __name__ == "__main__":
     print(f"Database port: {db.port}")
     print(f"Database user: {db.user}")
     print(f"Database password: {db.password}")
+    storage = settings.storage
+    print(f"Storage settings: {storage}")
+    print(f"Storage host: {storage.host}")
+    print(f"Storage share: {storage.share}")
+    print(f"Storage folder: {storage.folder}")

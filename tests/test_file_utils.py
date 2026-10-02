@@ -18,8 +18,8 @@ CHUNKSIZE = FileSizeUnit.MB * 1
 def test_build_unc_path():
     hostname = "server"
     share = "share"
-    folder = "folder"
-    expected_path = r"\\server\share\folder"
+    folder = r"folder\subfolder"
+    expected_path = r"\\server\share\folder\subfolder"
     assert build_unc_path(hostname, share, folder) == expected_path
 
 
