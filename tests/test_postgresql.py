@@ -3,7 +3,7 @@ is accessible and functioning correctly.
 """
 
 import pytest
-from sqlalchemy import Connection, text
+from sqlalchemy import text
 
 from src.db import get_engine_postgresql
 from src.settings import Infrastructure, Settings
@@ -17,7 +17,7 @@ _infra = Settings().infrastructure
 
 
 @pytest.fixture(name="phenobase", scope="function")
-def phenobase_conn(request) -> Connection:
+def phenobase_conn():
     """PostgreSQL connection fixture.
     The connection is established before each test and closed after the test."""
     engine = get_engine_postgresql()
