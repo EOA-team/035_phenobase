@@ -84,38 +84,11 @@ def get_engine_postgresql():
     return engine
 
 
-@cache
-def get_engine_sqlite():
-    """Create an in-memory SQLite engine .
-    Used For:
-    1. Running unit tests on CI/CD pipelines (Docker)
-
-    @cache returns the SAME engine on every call: an in-memory SQLite
-    database lives inside its engine/connection (StaticPool), so creating
-    a new engine per call would give each caller its own empty database.
-    """
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    return engine
-
-
 @contextmanager
 def open_db_session():
     """Yield a context manager of db session for Pytest Fixtures"""
-    phenobase_env = PhenobaseEnv(os.getenv("PHENOBASE_ENV"))
-    engine_type = get_engine_type(phenobase_env)
-    if engine_type == EngineType.POSTGRESQL:
-        with Session(get_engine_postgresql()) as session:
-            yield session
-    elif engine_type == EngineType.SQLITE:
-        with Session(get_engine_sqlite()) as session:
-            yield session
-    else:
-        raise ValueError(f"Unsupported engine type: {engine_type}")
-
+    with Session(get_engine_postgresql()) as session:
+        yield session
 
 def get_db_session():
     """Yield a generator for the FastAPI session"""
