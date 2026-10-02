@@ -25,8 +25,8 @@ class DatabaseConfig(BaseSettings):
     port: int  # DB_PORT
     user: str  # DB_USER
     password: SecretStr  # DB_PASSWORD
-    name_prod: DatabaseName  # DB_NAME_PROD
-    name_test: DatabaseName  # DB_NAME_TEST
+    name_prod: DatabaseName = DatabaseName.PHENOBASE  # Hardcoded!
+    name_test: DatabaseName = DatabaseName.TEST_PHENOBASE  # Hardcoded!
 
 
 class StorageConfig(BaseSettings):

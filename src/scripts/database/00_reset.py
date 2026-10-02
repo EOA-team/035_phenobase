@@ -1,7 +1,6 @@
 """Resets the whole database by dropping and recreating all tables.
 Warning: All data in the database will be lost."""
 
-
 from dotenv import load_dotenv
 from sqlmodel import SQLModel
 
