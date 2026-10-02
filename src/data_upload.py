@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Protocol, cast
 
 import pandas as pd
@@ -26,7 +26,7 @@ from src.nas_helper import (
     build_unc_path,
     connect_to_nas,
 )
-from src.settings import Settings
+from src.settings import DeployStage, Infrastructure, Settings
 
 
 class UploadRow(Protocol):
@@ -43,20 +43,13 @@ class UploadRowWithId(UploadRow, Protocol):
     id: int
 
 
-def build_upload_path() -> str:
-    """Build the upload path based on settings"""
-    settings = Settings()
-    deploy_stage = settings.deploy_stage
-
-    phenobase_root = build_unc_path(
-        hostname=settings.storage.host,
-        share=settings.storage.share,
-        folder=settings.storage.folder,
-    )
-
-    upload_folder = phenobase_root + "\\" + deploy_stage.value + "\\uploads"
-
-    return upload_folder
+def build_upload_path(
+    base_path: str, deploy_stage: DeployStage, unc: bool = False
+) -> Path | PureWindowsPath:
+    """Build the upload path. Use unc=True for NAS paths so backslashes are
+    kept regardless of the OS the API runs on."""
+    path_cls = PureWindowsPath if unc else Path
+    return path_cls(base_path) / deploy_stage.value / "uploads"
 
 
 def build_upload_filename(table_name: UploadTables) -> str:
@@ -175,14 +168,42 @@ def validate_file_content(
 
 
 def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
-    """Upload a file to the storage"""
-    upload_path = build_upload_path()
-    filename = build_upload_filename(UploadTables(table_name))
-    upload_file_path = Path(upload_path) / filename
+    """Upload a file to the storage location (NAS or local) based on the infrastructure setting."""
 
-    connect_to_nas(user_type=NasUser.SERVICE, password=NasPw.SERVICE)
-    with smbclient.open_file(upload_file_path, "wb", encoding="utf-8") as f:
-        f.write(data)
+    def _write_to_local_storage(path: Path, data: bytes) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+
+    def _write_to_nas_storage(path: PureWindowsPath, data: bytes) -> None:
+        connect_to_nas(user_type=NasUser.SERVICE, password=NasPw.SERVICE)
+        smbclient.makedirs(str(path.parent), exist_ok=True)  # create folder if missing
+        with smbclient.open_file(
+            str(path), mode="wb"
+        ) as f:  # no encoding in binary mode
+            f.write(data)
+
+    settings = Settings()
+    filename = build_upload_filename(UploadTables(table_name))
+
+    if settings.infrastructure == Infrastructure.LOCAL:
+        upload_path = build_upload_path(
+            base_path=settings.storage.local_path,
+            deploy_stage=settings.deploy_stage,
+        )
+        _write_to_local_storage(upload_path / filename, data)
+
+    elif settings.infrastructure == Infrastructure.AGS_FOLA:
+        unc_path = build_unc_path(
+            hostname=settings.storage.host,
+            share=settings.storage.share,
+            folder=settings.storage.folder,
+        )
+        upload_path = build_upload_path(
+            base_path=unc_path,
+            deploy_stage=settings.deploy_stage,
+            unc=True,
+        )
+        _write_to_nas_storage(upload_path / filename, data)
 
 
 def write_to_database(
@@ -271,3 +292,19 @@ def build_upload_csv_template(table_name: UploadTables) -> str:
     rows = [columns, insert_row, update_row, delete_row]
 
     return "\n".join(";".join(row) for row in rows) + "\n"
+
+
+if __name__ == "__main__":
+    settings = Settings()
+    deploy_stage = settings.deploy_stage
+    infrastructure = settings.infrastructure
+
+    local_path = settings.storage.local_path
+    unc_path = build_unc_path(
+        hostname=settings.storage.host,
+        share=settings.storage.share,
+        folder=settings.storage.folder,
+    )
+
+    print(build_upload_path(base_path=local_path, deploy_stage=deploy_stage))
+    print(build_upload_path(base_path=unc_path, deploy_stage=deploy_stage, unc=True))
