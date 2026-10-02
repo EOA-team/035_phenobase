@@ -36,6 +36,19 @@ class StorageConfig(BaseSettings):
     host: str  # STORAGE_HOST
     share: str  # STORAGE_SHARE
     folder: str  # PHENOBASE_ROOT
+    local_path: str  # STORAGE_LOCAL_PATH
+
+
+class FolaConfig(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="FOLA_", env_file=".env", extra="ignore"
+    )
+    base_domain: str  # FOLA_BASE_DOMAIN
+    gamarello_domain: str  # FOLA_GAMARELLO_DOMAIN
+    normal_user: str  # FOLA_NORMAL_USER
+    normal_password: SecretStr  # FOLA_NORMAL_PASSWORD
+    service_user: str  # FOLA_SERVICE_USER
+    service_password: SecretStr  # FOLA_SERVICE_PASSWORD
 
 
 class Settings(BaseSettings):
@@ -46,20 +59,10 @@ class Settings(BaseSettings):
     deploy_stage: DeployStage
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
+    fola: FolaConfig = Field(default_factory=FolaConfig)
 
 
 if __name__ == "__main__":
     settings = Settings()
-    db = settings.database
-    print(f"Database settings: {db}")
-    print(f"Database name for production: {db.name_prod}")
-    print(f"Database name for testing: {db.name_test}")
-    print(f"Database host: {db.host}")
-    print(f"Database port: {db.port}")
-    print(f"Database user: {db.user}")
-    print(f"Database password: {db.password}")
-    storage = settings.storage
-    print(f"Storage settings: {storage}")
-    print(f"Storage host: {storage.host}")
-    print(f"Storage share: {storage.share}")
-    print(f"Storage folder: {storage.folder}")
+    fola = settings.fola
+    print(fola)

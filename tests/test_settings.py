@@ -27,6 +27,4 @@ def test_storage_settings():
     unc_path = build_unc_path(
         hostname=storage.host, share=storage.share, folder=storage.folder
     )
-
-    print(unc_path)
     assert unc_path == rf"\\{storage.host}\{storage.share}\{storage.folder}"

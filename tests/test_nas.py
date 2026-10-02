@@ -28,14 +28,15 @@ from src.nas_helper import (
     copy_from_nas_to_local,
     copy_from_nas_to_nas,
 )
+from src.settings import Settings
 
 load_dotenv()
 
 # Drone Data Location directly on NAS
 NAS_TARGET = build_unc_path(
-    hostname=os.environ["NAS_RECKENHOLZ"],
-    share="Data-EODrone",
-    folder="drone",
+    hostname=Settings().storage.host,
+    share=Settings().storage.share,
+    folder=Settings().storage.folder,
 )
 
 FILESIZE = FileSizeUnit.MB * 10

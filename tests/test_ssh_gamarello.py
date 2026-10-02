@@ -1,13 +1,13 @@
 """Tests SSH connection to the Gamarello Cluster."""
 
-import os
 from pathlib import Path
 
 import pytest
-from dotenv import load_dotenv
 from paramiko import SSHClient
 
-load_dotenv()
+from src.settings import Settings
+
+settings = Settings()
 
 
 @pytest.fixture(scope="module")
@@ -16,9 +16,9 @@ def ssh():
     client = SSHClient()
     client.load_host_keys(filename=str(Path.home() / ".ssh" / "known_hosts"))
     client.connect(
-        hostname=os.getenv("GAMARELLO_ADDRESS"),
-        username=os.getenv("SERVICE_USER"),
-        password=os.getenv("SERVICE_PASSWORD"),
+        hostname=settings.fola.gamarello_domain,
+        username=settings.fola.service_user,
+        password=settings.fola.service_password.get_secret_value(),
     )
     yield client
     client.close()
@@ -37,7 +37,7 @@ def test_expected_ssh_user(ssh):
     """Verify that the SSH connection is using the expected user."""
     _, stdout, _ = ssh.exec_command("whoami")
     remote_user = stdout.read().decode().strip()
-    expected_user = os.getenv("SERVICE_USER")
+    expected_user = settings.fola.service_user
     print(remote_user)
     assert remote_user == expected_user, (
         f"Expected SSH user {expected_user}, but got {remote_user}"
