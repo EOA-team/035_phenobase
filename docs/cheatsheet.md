@@ -33,8 +33,8 @@ pytest --cov=src --cov-report=term-missing
 pytest --cov=src --cov-fail-under=80 -s -v
 
 # Run test that do not rely on Fola Infrastructure  
-pytest -s -v -m "not fola"
-pytest --cov=src/ --cov-fail-under=80 -m "not fola"
+pytest -s -v -m "not ags_fola"
+pytest --cov=src/ --cov-fail-under=80 -m "not ags_fola"
 ```
 
 ### start traefik(powershell)

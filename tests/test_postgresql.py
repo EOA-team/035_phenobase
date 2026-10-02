@@ -27,7 +27,6 @@ def phenobase_conn():
 
 
 @pytest.mark.integration
-@pytest.mark.fola
 @pytest.mark.parametrize("expected_dbs", ["phenobase", "test_phenobase"])
 def test_available_databases(phenobase, expected_dbs):
     """Check that expected databases are available on the PostgreSQL server"""
@@ -38,7 +37,6 @@ def test_available_databases(phenobase, expected_dbs):
 
 
 @pytest.mark.integration
-@pytest.mark.fola
 @pytest.mark.parametrize("expected_version", [EXPECTED_VERSIONS[_infra]["postgres"]])
 def test_postgres_version(phenobase, expected_version):
     """Check expected PostgreSQL version is installed on the server"""
@@ -48,7 +46,6 @@ def test_postgres_version(phenobase, expected_version):
 
 
 @pytest.mark.integration
-@pytest.mark.fola
 @pytest.mark.parametrize("expected_ext", ["postgis", "plpgsql"])
 def test_available_extensions(phenobase, expected_ext):
     """Check that expected extensions are available on the Database"""
@@ -61,7 +58,6 @@ def test_available_extensions(phenobase, expected_ext):
 
 
 @pytest.mark.integration
-@pytest.mark.fola
 @pytest.mark.parametrize("expected_version", [EXPECTED_VERSIONS[_infra]["postgis"]])
 def test_postgis_version(phenobase, expected_version):
     """Check that PostGIS extension is installed and has the expected version"""
@@ -71,7 +67,6 @@ def test_postgis_version(phenobase, expected_version):
 
 
 @pytest.mark.integration
-@pytest.mark.fola
 def test_postgis_crud(phenobase):
     """C=Create, R=Read, U=Update, D=Delete — full crud with geometry."""
     # C: Create a temporary table and insert 3 polygons

@@ -25,14 +25,14 @@ def ssh():
 
 
 @pytest.mark.integration
-@pytest.mark.fola
+@pytest.mark.ags_fola
 def test_ssh_connection(ssh):
     """Test that the SSH connection is established successfully."""
     assert ssh.get_transport().is_active(), "SSH connection is not active."
 
 
 @pytest.mark.integration
-@pytest.mark.fola
+@pytest.mark.ags_fola
 def test_expected_ssh_user(ssh):
     """Verify that the SSH connection is using the expected user."""
     _, stdout, _ = ssh.exec_command("whoami")
@@ -45,7 +45,7 @@ def test_expected_ssh_user(ssh):
 
 
 @pytest.mark.integration
-@pytest.mark.fola
+@pytest.mark.ags_fola
 def test_directory_listing(ssh):
     """Test that we can list the contents of the drone directory on the remote server."""
     _, stdout, _ = ssh.exec_command("ls /agroscope/EO_drone/drone")
