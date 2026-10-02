@@ -43,13 +43,14 @@ class UploadRowWithId(UploadRow, Protocol):
     id: int
 
 
-def build_upload_path(
-    base_path: str, deploy_stage: DeployStage, unc: bool = False
-) -> Path | PureWindowsPath:
-    """Build the upload path. Use unc=True for NAS paths so backslashes are
-    kept regardless of the OS the API runs on."""
-    path_cls = PureWindowsPath if unc else Path
-    return path_cls(base_path) / deploy_stage.value / "uploads"
+def build_local_upload_path(base_path: str, deploy_stage: DeployStage) -> Path:
+    """Build the upload path on local storage."""
+    return Path(base_path) / deploy_stage.value / "uploads"
+
+
+def build_unc_upload_path(base_path: str, deploy_stage: DeployStage) -> PureWindowsPath:
+    """Build the upload path on the NAS. Always uses backslashes, whatever the OS."""
+    return PureWindowsPath(base_path) / deploy_stage.value / "uploads"
 
 
 def build_upload_filename(table_name: UploadTables) -> str:
@@ -186,24 +187,27 @@ def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
     filename = build_upload_filename(UploadTables(table_name))
 
     if settings.infrastructure == Infrastructure.LOCAL:
-        upload_path = build_upload_path(
+        local_upload_path = build_local_upload_path(
             base_path=settings.storage.local_path,
             deploy_stage=settings.deploy_stage,
         )
-        _write_to_local_storage(upload_path / filename, data)
-
+        _write_to_local_storage(local_upload_path / filename, data)
     elif settings.infrastructure == Infrastructure.AGS_FOLA:
         unc_path = build_unc_path(
             hostname=settings.storage.host,
             share=settings.storage.share,
             folder=settings.storage.folder,
         )
-        upload_path = build_upload_path(
+        nas_upload_path = build_unc_upload_path(
             base_path=unc_path,
             deploy_stage=settings.deploy_stage,
-            unc=True,
         )
-        _write_to_nas_storage(upload_path / filename, data)
+        _write_to_nas_storage(nas_upload_path / filename, data)
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unsupported infrastructure: {settings.infrastructure}",
+        )
 
 
 def write_to_database(
@@ -306,5 +310,5 @@ if __name__ == "__main__":
         folder=settings.storage.folder,
     )
 
-    print(build_upload_path(base_path=local_path, deploy_stage=deploy_stage))
-    print(build_upload_path(base_path=unc_path, deploy_stage=deploy_stage, unc=True))
+    print(build_local_upload_path(base_path=local_path, deploy_stage=deploy_stage))
+    print(build_unc_upload_path(base_path=unc_path, deploy_stage=deploy_stage))
