@@ -4,10 +4,21 @@ from pathlib import Path
 import pytest
 from sqlmodel import SQLModel
 
-from src.db import PhenobaseEnv, get_database_name, open_db_session
+from src.db import open_db_session
 from src.models.tables.user import User
+from src.settings import DeployStage, Settings
 
 SEEDS_FOLDER = Path(__file__).resolve().parent.parent / "seeds"
+
+
+@pytest.fixture(autouse=True)
+def production_safeguard():
+    """Refuse to run any tests on production"""
+    settings = Settings()
+    if settings.deploy_stage is DeployStage.PRODUCTION:
+        pytest.skip(
+            "DEPLOY_STAGE=production — Safeguard prevents running tests on production."
+        )
 
 
 @pytest.fixture(scope="session")
@@ -17,11 +28,6 @@ def phenobase_db_minimal():
         engine = session.get_bind()
         active_db_name = engine.url.database
         print(active_db_name)
-
-        if active_db_name == get_database_name(PhenobaseEnv.PRODUCTION):
-            raise ValueError(
-                f"Refusing to run test on a non-test databae: {engine.url.database}"
-            )
 
         # Drop all tables to ensure a clean slate
         SQLModel.metadata.drop_all(engine)

@@ -1,7 +1,6 @@
 from enum import StrEnum
-from functools import cached_property
 
-from pydantic import BaseModel, SecretStr, Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,24 +20,23 @@ class DatabaseName(StrEnum):
 
 
 class DatabaseConfig(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="DB_", 
-        env_file=".env", 
-        extra="ignore"
-    )  
-    host: str # DB_HOST
-    port: int # DB_PORT
-    user: str # DB_USER
-    password: SecretStr # DB_PASSWORD
-    name_prod: DatabaseName # DB_NAME_PROD
-    name_test: DatabaseName # DB_NAME_TEST
+    model_config = SettingsConfigDict(env_prefix="DB_", env_file=".env", extra="ignore")
+    host: str  # DB_HOST
+    port: int  # DB_PORT
+    user: str  # DB_USER
+    password: SecretStr  # DB_PASSWORD
+    name_prod: DatabaseName  # DB_NAME_PROD
+    name_test: DatabaseName  # DB_NAME_TEST
+
 
 class Settings(BaseSettings):
     """Reads INFRASTRUCTURE and DEPLOY_STAGE from env / .env."""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     infrastructure: Infrastructure
     deploy_stage: DeployStage
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
+
 
 if __name__ == "__main__":
     settings = Settings()

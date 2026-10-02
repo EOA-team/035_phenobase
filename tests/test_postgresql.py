@@ -3,35 +3,48 @@ is accessible and functioning correctly.
 """
 
 import pytest
-from dotenv import load_dotenv
+from sqlalchemy import Connection, text
 
-from src.postgresql_helper import connect_to_database
+from src.db import get_engine_postgresql
+from src.settings import Infrastructure, Settings
 
-load_dotenv()  # Load environment variables from .env file
+EXPECTED_VERSIONS = {
+    Infrastructure.LOCAL: {"postgres": "PostgreSQL 16.3", "postgis": "3.4"},
+    Infrastructure.AGS_FOLA: {"postgres": "PostgreSQL 16.15", "postgis": "3.4"},
+}
 
-# phenobase = production database, test_phenobase = test database
-DBS_TO_TEST = ["phenobase", "test_phenobase"]
+_infra = Settings().infrastructure
 
 
-@pytest.fixture(name="phenobase", scope="function", params=DBS_TO_TEST)
-def phenobase_conn(request):
-    """PostgreSQL connection to production and test database.
+@pytest.fixture(name="phenobase", scope="function")
+def phenobase_conn(request) -> Connection:
+    """PostgreSQL connection fixture.
     The connection is established before each test and closed after the test."""
-    conn = connect_to_database(dbname=request.param)
-    yield conn
-    conn.close()
+    engine = get_engine_postgresql()
+    with engine.connect() as conn:
+        yield conn
+    engine.dispose()
 
 
 @pytest.mark.integration
 @pytest.mark.fola
-@pytest.mark.parametrize("version", ["PostgreSQL 16.15"])
-def test_postgres_version(phenobase, version):
+@pytest.mark.parametrize("expected_dbs", ["phenobase", "test_phenobase"])
+def test_available_databases(phenobase, expected_dbs):
+    """Check that expected databases are available on the PostgreSQL server"""
+    query = text("SELECT datname FROM pg_database;")
+    result = phenobase.execute(query).fetchall()
+    available_dbs = [row[0] for row in result]
+    assert expected_dbs in available_dbs
+
+
+@pytest.mark.integration
+@pytest.mark.fola
+@pytest.mark.parametrize("expected_version", [EXPECTED_VERSIONS[_infra]["postgres"]])
+def test_postgres_version(phenobase, expected_version):
     """Check expected PostgreSQL version is installed on the server"""
-    cur = phenobase.cursor()
-    cur.execute("SELECT version();")
-    result = cur.fetchone()[0]
-    cur.close()
-    assert version in result
+    query = text("SELECT version();")
+    result = phenobase.execute(query).scalar()
+    assert expected_version in result
 
 
 @pytest.mark.integration
@@ -39,94 +52,80 @@ def test_postgres_version(phenobase, version):
 @pytest.mark.parametrize("expected_ext", ["postgis", "plpgsql"])
 def test_available_extensions(phenobase, expected_ext):
     """Check that expected extensions are available on the Database"""
-    cur = phenobase.cursor()
-    cur.execute(
+    query = text(
         "SELECT name, default_version, comment FROM pg_available_extensions ORDER BY name"
     )
-    available_ext = [row[0] for row in cur.fetchall()]
-    cur.close()
+    result = phenobase.execute(query).fetchall()
+    available_ext = [row[0] for row in result]
     assert expected_ext in available_ext
 
 
 @pytest.mark.integration
 @pytest.mark.fola
-@pytest.mark.parametrize("version", ["3.4"])
-def test_postgis_version(phenobase, version):
+@pytest.mark.parametrize("expected_version", [EXPECTED_VERSIONS[_infra]["postgis"]])
+def test_postgis_version(phenobase, expected_version):
     """Check that PostGIS extension is installed and has the expected version"""
-    cur = phenobase.cursor()
-    cur.execute("SELECT PostGIS_Version();")
-    result = cur.fetchone()[0]
-    assert version in result
-    cur.close()
-
-
-@pytest.mark.integration
-@pytest.mark.fola
-@pytest.mark.parametrize("expected_dbs", ["phenobase"])
-def test_available_databases(phenobase, expected_dbs):
-    """Check that expected databases are available on the PostgreSQL server"""
-    cur = phenobase.cursor()
-    cur.execute("SELECT datname FROM pg_database;")
-    result = cur.fetchall()
-    available_dbs = [row[0] for row in result]
-    assert expected_dbs in available_dbs
-    cur.close()
+    query = text("SELECT PostGIS_Version();")
+    result = phenobase.execute(query).scalar()
+    assert expected_version in result
 
 
 @pytest.mark.integration
 @pytest.mark.fola
 def test_postgis_crud(phenobase):
     """C=Create, R=Read, U=Update, D=Delete — full crud with geometry."""
-    cur = phenobase.cursor()
-
-    # C :Create temp table and insert 3 polygons
-    cur.execute("""
+    # C: Create a temporary table and insert 3 polygons
+    phenobase.execute(
+        text("""
         CREATE TEMP TABLE test_geom (
             id   SERIAL,
             geom GEOMETRY(Polygon, 4326)
         )
     """)
-    cur.execute("""
+    )
+    phenobase.execute(
+        text("""
         INSERT INTO test_geom (geom) VALUES
             (ST_MakeEnvelope(-10, -10, 10, 10, 4326)),
             (ST_MakeEnvelope( -5,  -5,  5,  5, 4326)),
             (ST_MakeEnvelope( -1,  -1,  1,  1, 4326))
     """)
+    )
 
     # R: Read the inserted polygon and check its (idx,area)
-    cur.execute("SELECT id, ST_Area(geom) FROM test_geom")
-    rows = cur.fetchall()
+    rows = phenobase.execute(text("SELECT id, ST_Area(geom) FROM test_geom")).fetchall()
     assert len(rows) == 3
     assert rows[0] == (1, 400.0)
     assert rows[1] == (2, 100.0)
     assert rows[2] == (3, 4.0)
 
     # U : Update polygon with ID=2
-    cur.execute("""
+    phenobase.execute(
+        text("""
         UPDATE test_geom
         SET geom = ST_MakeEnvelope(-2, -2, 2, 2, 4326)
         WHERE id = 2
     """)
-
-    cur.execute("SELECT id, ST_Area(geom) FROM test_geom ORDER BY id")
-    rows = cur.fetchall()
+    )
+    rows = phenobase.execute(
+        text("SELECT id, ST_Area(geom) FROM test_geom ORDER BY id")
+    ).fetchall()
     assert rows[1] == (2, 16.0)
 
     # R: Read Spatial Relationships
     # ST_Within(geom, box) is true when geom is fully inside the query box
-    cur.execute("""
+    results = phenobase.execute(
+        text("""
         SELECT id, ST_Within(geom, ST_MakeEnvelope(-6, -6, 6, 6, 4326))
         FROM test_geom
         ORDER BY id
     """)
-    results = cur.fetchall()
+    )
+    results = results.fetchall()
     assert results[0] == (1, False), "id=1 is too large for the box"
     assert results[1] == (2, True), "id=2 fits inside"
     assert results[2] == (3, True), "id=3 fits inside"
 
     # D : Delete ID=1 and check that only 2 rows remain
-    cur.execute("DELETE FROM test_geom WHERE id = 1")
-    cur.execute("SELECT count(*) FROM test_geom")
-    assert cur.fetchone()[0] == 2
-
-    cur.close()
+    phenobase.execute(text("DELETE FROM test_geom WHERE id = 1"))
+    assert phenobase.execute(text("SELECT count(*) FROM test_geom")).fetchone()[0] == 2
