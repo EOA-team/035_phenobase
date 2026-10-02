@@ -7,9 +7,13 @@ Status of Container
 ```bash
 docker compose ps
 ```
-stop and Delete Container
+Stop and delete container
 ```bash
-docker compose down -v
+docker compose down 
+```
+Delete persisten volume
+```bash
+docker volume rm docker_pgdata
 ```
 Check Config
 ```bash
