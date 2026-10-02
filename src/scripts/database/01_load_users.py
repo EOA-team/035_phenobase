@@ -26,9 +26,12 @@ SEED_FOLDER = r"drone\phenobase\production\seed"
 def load_users_from_nas() -> list[dict]:
     """Load users data from the NAS."""
     seed_path = build_unc_path(
-        hostname=os.getenv("NAS_RECKENHOLZ"), share="Data-EODrone", folder=SEED_FOLDER
+        hostname = Settings().storage.host,
+        share = Settings().storage.share,
+        folder = SEED_FOLDER
     )
     users_filepath = Path(seed_path) / "users.json"
+    print(f"Loading users from NAS path: {users_filepath}")
     connect_to_nas(user_type=NasUser.NORMAL, password=NasPw.NORMAL)
     with smbclient.open_file(users_filepath, "r", encoding="utf-8") as f:
         users_data = json.load(f)
