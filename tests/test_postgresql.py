@@ -27,7 +27,7 @@ def phenobase_conn():
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("expected_dbs", ["test_phenobase"])
+@pytest.mark.parametrize("expected_dbs", ["test_phenobase", "phenobase"])
 def test_available_databases(phenobase, expected_dbs):
     """Check that expected databases are available on the PostgreSQL server"""
     query = text("SELECT datname FROM pg_database;")
