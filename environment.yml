@@ -10,9 +10,8 @@ dependencies:
   - pytest-integration
   - pip
   - python-dotenv
-  - psycopg2
+  - psycopg
   - sqlalchemy
-  - types-psycopg2
   - fastapi
   - uvicorn
   - httpx
