@@ -1,6 +1,6 @@
 {
 "type": "FeatureCollection",
-"name": "zofe",
+"name": "zofe_crop_plots",
 "category": "crop_plots",
 "mode": "insert",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::2056" } },
