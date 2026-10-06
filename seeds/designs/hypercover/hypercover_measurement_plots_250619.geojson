@@ -1,6 +1,6 @@
 {
 "type": "FeatureCollection",
-"name": "hypercover_250619",
+"name": "hypercover_measurement_plots_250619",
 "category": "measurement_plots",
 "mode": "insert",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::2056" } },
