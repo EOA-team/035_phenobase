@@ -1,0 +1,3 @@
+id,mode,name,code,description
+,insert,fresh biomass,FBM,wet/green weight before drying 
+,insert,dry biomass,DBM,dry weight after oven-driying to a constant mass
