@@ -1,10 +1,10 @@
-id,mode,design,category,plot_collections ,layer
-,insert,hypercover_experiment,experiment ,hypercover_experiment_plots,1
-,insert,hypercover_treatment ,treatment,hypercover_treatment_plots,1
-,insert,hypercover_crop,crop,hypercover_crop_plots,1
-,insert,hypercover_measurement,measurement ,hypercover_measurement_plots_250610,1
-,insert ,hypercover_measurement,measurement ,hypercover_measurement_plots_250619,2
-,insert ,hypercover_measurement,measurement ,hypercover_measurement_plots_250717,3
-,insert ,hypercover_measurement,measurement ,hypercover_measurement_plots_250807,4
-,insert ,hypercover_measurement,measurement ,hypercover_measurement_plots_250903,5
-,insert ,hypercover_measurement,measurement ,hypercover_measurement_plots_250918,6
+id,mode,subdesign,plot_collections
+,insert,hypercover_experiment,hypercover_experiment_plots
+,insert,hypercover_treatment ,hypercover_treatment
+,insert,hypercover_crop,hypercover_crop_plots
+,insert,hypercover_measurement,hypercover_measurement_plots_250610
+,insert ,hypercover_measurement,hypercover_measurement_plots_250619
+,insert ,hypercover_measurement,hypercover_measurement_plots_250717
+,insert ,hypercover_measurement,hypercover_measurement_plots_250807
+,insert ,hypercover_measurement,hypercover_measurement_plots_250903
+,insert ,hypercover_measurement,hypercover_measurement_plots_250918
