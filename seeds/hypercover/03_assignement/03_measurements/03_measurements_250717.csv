@@ -1,4 +1,4 @@
-id,mode,plot_collection,acquisition_date,id,row,col,variable_code,value,unit_code,remarks
+id,mode,plot_collection,acquisition_date,label,row,col,variable_code,value,unit_code,remarks
 ,insert,hypercover_measurement_plots_250717,17.07.2025,x1_y1,1,1,FBM,1914,g/m^2,
 ,insert,hypercover_measurement_plots_250717,17.07.2025,x3_y1,1,3,FBM,1449.2,g/m^2,
 ,insert,hypercover_measurement_plots_250717,17.07.2025,x7_y1,1,7,FBM,2284.4,g/m^2,
