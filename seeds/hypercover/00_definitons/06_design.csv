@@ -1,2 +1,2 @@
-id,mode,design ,experiment_design ,treatment_design ,crop_design ,measurement_design 
-,insert,hypercover_design ,hypercover_experiment,hypercover_treatment ,hypercover_crop,hypercover_measurement
+id,mode,design 
+,insert,hypercover_design 

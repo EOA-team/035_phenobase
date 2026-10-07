@@ -1,2 +1,6 @@
-id,mode,code,description
-,insert,g/m^2,gramm per square meter
+id,mode,code,name,description
+,insert,g_m2,g/m^2,gramm per square meter
+,insert ,w_m2_sr_nm,W/(m² ⋅sr ⋅ nm),watts per square meter per steradian per nanometer
+,insert ,scalar ,scalar,"universal entry for dimensionless, scaled, or unitless values"
+,insert ,percent ,%,Percentage values (0 - 100%)
+,insert ,scalar_10k,1/10000,scalar scaled by 10000

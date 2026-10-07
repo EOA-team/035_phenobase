@@ -1,5 +1,5 @@
-id,mode,category ,design 
-,insert,experiment,hypercover_experiment
-,insert,treatment,hypercover_treatment 
-,insert,crop,hypercover_crop
-,insert,measurementr,hypercover_measurement
+id,mode,subdesign,category 
+,insert,hypercover_experiment,experiment
+,insert,hypercover_treatment,treatment 
+,insert,hypercover_crop,crop
+,insert,hypercover_measurement,measurement
