@@ -1,0 +1,5 @@
+id,mode,design ,subdesign
+,insert,hypercover_design ,hypercover_experiment
+,insert,hypercover_design ,hypercover_treatment 
+,insert,hypercover_design ,hypercover_crop
+,insert,hypercover_design ,hypercover_measurement
