@@ -1,4 +1,4 @@
-id,mode,plot_collection,label,row,col,treatmend_code,treatment_date
+id,mode,plot_collection,label,row,col,treatment_code,treatment_date
 ,insert,hypercover_treatment_plots,x1_y1,1,1,SOW-CC-LEPH,2025-05-01
 ,insert,hypercover_treatment_plots,x1_y1,1,1,SOW-CC-LEPH,2025-08-13
 ,insert,hypercover_treatment_plots,x2_y1,1,2,SOW-CC-LEPH,2025-04-11
