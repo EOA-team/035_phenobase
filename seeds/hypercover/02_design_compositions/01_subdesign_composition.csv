@@ -1,6 +1,6 @@
 id,mode,subdesign,plot_collections
 ,insert,hypercover_experiment,hypercover_experiment_plots
-,insert,hypercover_treatment ,hypercover_treatment
+,insert,hypercover_treatment ,hypercover_treatment_plots
 ,insert,hypercover_crop,hypercover_crop_plots
 ,insert,hypercover_measurement,hypercover_measurement_plots_250610
 ,insert ,hypercover_measurement,hypercover_measurement_plots_250619
