@@ -1,6 +1,6 @@
-id,mode,name,code,description
-,insert,fresh biomass,FBM,wet/green weight before drying
-,insert,dry biomass,DBM,dry weight after oven-driying to a constant mass
-,insert,radiance,RAD,spectral energy emitted or reflected by a surface and captured by an optical sensor
-,insert,reflectance,REFL,surface reflectance representing the ratio of reflected radiant flux to incident radiant flux
-,insert,leaf area index,LAI,total one-sided green leaf area relative to the underlying horizontal ground surface area
+id,mode,name,code,description,doc_path
+,insert,fresh biomass,FBM,"wet/green weight before drying",
+,insert,dry biomass,DBM,"dry weight after oven-driying to a constant mass",
+,insert,radiance,RAD,"spectral energy emitted or reflected by a surface and captured by an optical sensor",
+,insert,reflectance,REFL,"surface reflectance representing the ratio of reflected radiant flux to incident radiant flux",
+,insert,leaf area index,LAI,"total one-sided green leaf area relative to the underlying horizontal ground surface area",
