@@ -1,4 +1,4 @@
-id,mode,trial,acquisition_at,path,sha256sum,variable,unit
+id,mode,trial,acquisition_at,path,sha256sum,variable,unit_code
 ,insert,hypercover,2025-06-10,\\ags-vre-1040.agsad.admin.ch\Data-EODrone\drone\DERIS\processed\RE\112o\re112o_250610\mosaic_reflectance.tif,,REFL,scalar_10k
 ,insert,hypercover,2025-06-19,\\ags-vre-1040.agsad.admin.ch\Data-EODrone\drone\DERIS\processed\RE\112o\re112o_250619\mosaic_reflectance.tif,,REFL,scalar_10k
 ,insert,hypercover,2025-07-17,\\ags-vre-1040.agsad.admin.ch\Data-EODrone\drone\DERIS\processed\RE\112o\re112o_250717\mosaic_reflectance.tif,,REFL,scalar_10k
