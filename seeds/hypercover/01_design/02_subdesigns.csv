@@ -1,4 +1,4 @@
-id,mode,subdesign,category
+id,mode,name,category
 ,insert,hypercover_experiment,experiment
 ,insert,hypercover_treatment,treatment
 ,insert,hypercover_crop,crop
