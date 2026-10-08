@@ -1,4 +1,4 @@
-id,trial,mode,plot_collection,label,row,col,treatment_code,treatment_at
+id,mode,trial,plot_collection,label,row,col,treatment_code,treatment_at
 ,insert,hypercover,hypercover_treatment_plots,x1_y1,1,1,SOW,2025-05-01
 ,insert,hypercover,hypercover_treatment_plots,x1_y1,1,1,SOW,2025-08-13
 ,insert,hypercover,hypercover_treatment_plots,x2_y1,1,2,SOW,2025-04-11
