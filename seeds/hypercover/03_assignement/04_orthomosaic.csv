@@ -1,4 +1,4 @@
-id,mode,trial,acuqisition_date,path,sha256sum ,variable 
+id,mode,trial,acquisition_at,path,sha256sum ,variable 
 ,insert,hypercover,10.06.2025,ags-vre-1040.agsad.admin.ch\drone\DERIS\processed\RE\112o\re112o_250610\mosaic_reflectance.tif,,REFL
 ,insert,hypercover,19.06.2025,ags-vre-1040.agsad.admin.ch\drone\DERIS\processed\RE\112o\re112o_250619\mosaic_reflectance.tif,,REFL
 ,insert,hypercover,17.07.2025,ags-vre-1040.agsad.admin.ch\drone\DERIS\processed\RE\112o\re112o_250717\mosaic_reflectance.tif,,REFL
