@@ -1,0 +1,242 @@
+@startuml Phenobase Data Platform
+title Phenobase Data Platform 
+
+skinparam linetype ortho
+hide circle
+skinparam entity {
+  BackgroundColor White
+  BorderColor Black
+}
+
+' ============================================================
+' 00_catalogs — system-wide vocabulary
+' ============================================================
+
+entity "USER" as usr {
+  * id : BIGINT <<PK, identity>>
+  --
+  f_account : TEXT <<unique, nullable>>
+  firstname : TEXT
+  lastname : TEXT
+  status : TEXT 
+  role : TEXT 
+  email : TEXT
+  key_hash : VARCHAR(64) <<unique, nullable>>
+}
+
+entity "UNIT" as unit {
+  *id : BIGINT <<PK, identity>> "
+  --
+  code : TEXT <<unique>>
+  name : TEXT <<unique>>
+  description : TEXT
+  doc_path : TEXT <<nullable>> 
+}
+
+entity "VARIABLE" as var {
+  * id : BIGINT <<PK, identity>>"
+  --
+  code : TEXT <<unique>>
+  name : TEXT <<unique>>
+  description : TEXT
+  doc_path : TEXT <<nullable>> 
+}
+
+entity "CROP_TYPE" as ct {
+  * id : BIGINT <<PK, identity>>"
+  --
+  code : TEXT <<unique>>
+  name : TEXT <<unique>>
+  description : TEXT
+  doc_path : TEXT <<nullable>> 
+}
+
+entity "TREATMENT" as tr {
+  * id : BIGINT <<PK, identity>>"
+  --
+  code : TEXT <<unique>>
+  name : TEXT <<unique>>
+  description : TEXT
+  doc_path : TEXT
+}
+
+' ============================================================
+' 01_design — reusable skeleton, zero trial references
+' ============================================================
+
+entity "PLOT_COLLECTION" as pc {
+  * id : BIGINT <<PK, identity>>"
+  --
+  name : TEXT <<unique>>"
+  category : TEXT
+  crs : TEXT
+  uploaded_at : TIMESTAMPTZ
+}
+
+entity "PLOT" as plot {
+  * id : BIGINT <<PK, identity>>
+  --
+  plot_collection_id : BIGINT <<FK>>
+  label : TEXT
+  row : INT
+  col : INT
+  geometry : GEOMETRY(Polygon, 2056)
+  ..
+  UNIQUE (plot_collection_id, row, col) 
+  -- label-validation: label "x1_y1" must match col=1 row=1
+  -- 
+}
+
+entity "SUBDESIGN" as sd {
+  * id : BIGINT <<PK, identity>>
+  --
+  name : TEXT <<unique>> 
+  category : TEXT  
+}
+
+entity "SUBDESIGN_COMPOSITION" as sdc {
+  * id : BIGINT <<PK, identity>>
+  --
+  subdesign_id : BIGINT <<FK → SUBDESIGN.id>>
+  plot_collection_id : BIGINT <<FK → PLOT_COLLECTION.id>>
+
+  ..
+  UNIQUE (subdesign_id, plot_collection_id)
+  -- category-safe: SUBDESIGN(subdesign_id).category = PLOT_COLLECTION(plot_collection_id).category
+}
+
+entity "DESIGN" as dsg {
+  * id : BIGINT <<PK, identity>>
+  --
+  name : TEXT <<unique>>
+}
+
+entity "DESIGN_COMPOSITION" as dc {
+  * id : BIGINT <<PK, identity>>
+  --
+  design_id : BIGINT <<FK → DESIGN.id>>
+  subdesign_id : BIGINT <<FK → SUBDESIGN.id>>
+  ..
+  UNIQUE (design_id, subdesign_id) 
+}
+
+' ============================================================
+' 02_trial — the instances: only these change per new trial
+' ============================================================
+
+entity "TRIAL" as trial {
+  * id : BIGINT <<PK, identity>>
+  --
+  name : TEXT <<unique>> 
+  design_id : BIGINT <<FK → DESIGN.id>>
+  description : TEXT
+  path : TEXT
+}
+
+entity "TREATMENT_EVENT" as pte {
+  * id : BIGINT <<PK, identity>>
+  --
+  trial_id : BIGINT <<FK → TRIAL.id>>
+  plot_id : BIGINT <<FK → PLOT.id>>
+  treatment_id : BIGINT <<FK → TREATMENT.id>>
+  treatment_at : DATE/TIMESTAMPTZ "flexible: YYYY-MM-DD or ISO timestamp, e.g. 2025-04-11 / 2025-05-01"
+  ..
+  UNIQUE (trial_id, plot_id, treatment_id, treatment_at)
+  -- different dates of sowing = separate event rows
+  plot_id extraction via (plot_collection, label, row, col)
+}
+
+entity "CROP_ASSIGNMENT" as pct {
+  * id: BIGINT <<PK, identity>>
+  --
+  trial_id : BIGINT <<FK → TRIAL.id>>
+  plot_id : BIGINT <<FK → PLOT.id>>
+  crop_type_id : BIGINT <<FK → CROP_TYPE.id>>
+  ..
+  UNIQUE (trial_id, plot_id)
+  -- crop constant within a season
+  plot_id extraction via (plot_collection, label, row, col)
+}
+
+entity "INSITU_MEASUREMENT" as ins {
+  * id: BIGINT <<PK, identity>>
+  --
+  trial_id : BIGINT <<FK → TRIAL.id>>
+  plot_id : BIGINT <<FK → PLOT.id>>
+  acquisition_at : DATE/TIMESTAMPTZ "flexible: YYYY-MM-DD or ISO timestamp"
+  variable_id : BIGINT <<FK → VARIABLE.id>>
+  value : NUMERIC <<nullable>>
+  unit_id : BIGINT <<FK → UNIT.id>>
+  remarks : TEXT
+  ..
+  UNIQUE (trial_id, plot_id, variable_id, acquisition_at)
+  plot_id extraction via (plot_collection, label, row, col)
+}
+
+entity "UAV_FLIGHT" as flt {
+  * id: BIGINT <<PK, identity>>
+  --
+  trial_id : BIGINT <<FK → TRIAL.id>>
+  acquisition_at : TIMESTAMPTZ "flexible: YYYY-MM-DD or ISO timestamp"
+  path : TEXT <<unique>>
+  remarks : TEXT
+  ..
+  UNIQUE (trial_id, acquisition_at)
+  ..
+}
+
+entity "ORTHOMOSAIC" as om {
+  * id: BIGINT <<PK, identity>>
+  --
+  uav_flight_id : BIGINT <<FK → UAV_FLIGHT.id>>
+  variable_id : BIGINT <<FK → VARIABLE.id>>
+  unit_id : BIGINT <<FK → UNIT.id>>
+  path : TEXT 
+  sha256sum : VARCHAR(64)
+  ..
+  UNIQUE (uav_flight_id, variable_id)
+  
+}
+
+
+' ============================================================
+' Relationships
+' ============================================================
+
+pc ||--o{ plot : "collects"
+pc ||--o{ sdc : "composes"
+sd ||--o{ sdc : "consists of"
+sd ||--o{ dc : "(subdesign, category)"
+dsg ||--o{ dc : "is composed of"
+dsg ||--o{ trial : "is laid out as"
+
+trial ||--o{ pct : "has"
+trial ||--o{ pte : "has"
+trial ||--o{ ins : "has"
+trial ||--o{ flt : "has"
+
+plot ||--o{ pte : "receives"
+plot ||--o{ pct : "carries"
+plot ||--o{ ins : "measured on"
+
+tr ||--o{ pte : "classifies"
+ct ||--o{ pct : "classifies"
+var ||--o{ ins : "defines"
+unit ||--o{ ins : "defines"
+unit ||--o{ om : "defines"
+flt ||--o{ om : "produces"
+var ||--o{ om : "defines"
+
+
+
+note as N1
+  Upload rows carry: id and mode (insert | update | delete).
+  id column: row address for update / delete;
+  ignored on insert — DB auto-increment assigns it.
+  Lineage (creator_id / created_at / updater_id /
+  updated_at) is set AUTOMATICALLY on every insert
+  by DataLineageBase (src/models/base.py) —
+  drawn here without FK edges.
+end note
+
+@enduml

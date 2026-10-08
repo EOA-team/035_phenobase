@@ -1,7 +1,7 @@
 {
 "type": "FeatureCollection",
 "name": "zofe_treatment_plots",
-"category": "treatment_plots",
+"category": "treatment",
 "mode": "insert",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::2056" } },
 "features": [
