@@ -23,5 +23,6 @@ dependencies:
   - psycopg
   - pandas
   - pandas-stubs
+  - nbstripout
   #- pip:
   # pip-only packages go here if needed
