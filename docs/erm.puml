@@ -1,0 +1,220 @@
+@startuml "Phenobase Data Platform (v2)"
+title Phenobase Data Platform 
+
+skinparam linetype ortho
+hide circle
+skinparam entity {
+  BackgroundColor White
+  BorderColor Black
+}
+
+' ============================================================
+' 00_catalogs — system-wide vocabulary
+' ============================================================
+
+entity "USER" as usr {
+  * id : BIGINT <<PK, identity>>
+  --
+  f_account : TEXT <<unique, nullable>>
+  firstname : TEXT
+  lastname : TEXT
+  status : TEXT 
+  role : TEXT 
+  email : TEXT
+  key_hash : VARCHAR(64) <<unique, nullable>>
+}
+
+entity "UNIT" as unit {
+  *id : BIGINT <<PK, identity>> "
+  --
+  code : TEXT <<unique>>
+  name : TEXT <<unique>>
+  description : TEXT
+  doc_path : TEXT <<nullable>> 
+}
+
+entity "VARIABLE" as var {
+  * id : BIGINT <<PK, identity>>"
+  --
+  code : TEXT <<unique>>
+  name : TEXT <<unique>>
+  description : TEXT
+  doc_path : TEXT <<nullable>> 
+}
+
+entity "CROP_TYPE" as ct {
+  * id : BIGINT <<PK, identity>>"
+  --
+  code : TEXT <<unique>>
+  name : TEXT <<unique>>
+  description : TEXT
+  doc_path : TEXT <<nullable>> 
+}
+
+entity "TREATMENT" as tr {
+  * id : BIGINT <<PK, identity>>"
+  --
+  code : TEXT <<unique>>
+  name : TEXT <<unique>>
+  description : TEXT
+  doc_path : TEXT
+}
+
+' ============================================================
+' 01_design — reusable skeleton, zero trial references
+' ============================================================
+
+entity "PLOT_COLLECTION" as pc {
+  * id : BIGINT <<PK, identity>>"
+  --
+  name : TEXT <<unique>>"
+  category : TEXT
+  uploaded_at : TIMESTAMPTZ
+}
+
+entity "PLOT" as plot {
+  * id : BIGINT <<PK, identity>>
+  --
+  plot_collection.id : BIGINT <<FK>>
+  label : TEXT
+  row : INT
+  col : INT
+  geometry : GEOMETRY(Polygon, 2056)
+  ..
+  UNIQUE (plot_collection_name, row, col) 
+  -- label-validatio: label "x1_y1" must match col=1 row=1
+  -- 
+}
+
+entity "SUBDESIGN" as sd {
+  * id : BIGINT <<PK, identity>>
+  --
+  name : TEXT <<unique>> 
+  category : TEXT  
+}
+
+entity "SUBDESIGN_COMPOSITION" as sdc {
+  * id : BIGINT <<PK, identity>>
+  --
+  subdesign.id : BIGINT <<FK>>
+  plot_collection.id : BIGINT <<FK>>
+
+  ..
+  UNIQUE (subdesign.id, plot_collection.id)
+  -- category-safe: subdesign.id.category = plot_collection.id.category
+}
+
+entity "DESIGN" as dsg {
+  * id : BIGINT <<PK, identity>>
+  --
+  name : TEXT <<unique>>
+}
+
+entity "DESIGN_COMPOSITION" as dc {
+  * id : BIGINT <<PK, identity>>
+  --
+  design.id : BIGINT <<FK>>
+  subdesign.id : BIGINT <<FK >>
+  ..
+  UNIQUE (design.id, subdesign.id) 
+}
+
+' ============================================================
+' 02_trial — the instances: only these change per new trial
+' ============================================================
+
+entity "TRIAL" as trial {
+  * id : BIGINT <<PK, identity>>
+  --
+  name : TEXT <<unique>> 
+  design.id : BIGINT <<FK>>
+  description : TEXT
+  path : TEXT
+}
+
+entity "TREATMENT_EVENT" as pte {
+  * id : BIGINT <<PK, identity>>
+  --
+  trial.id : BIGINT <<FK>>
+  plot.id: BIGINT <<FK>>
+  treatment_code : TEXT <<FK>>
+  treatment_at : DATE/TIMESTAMPTZ "flexible: YYYY-MM-DD or ISO timestamp"
+  ..
+  plot_id extraction via (plot_collection,label,row,col)
+}
+
+entity "CROP_ASSIGNMENT" as pct {
+  * id: BIGINT <<PK, identity>>
+  --
+  trial.id : BIGINT <<FK>>
+  plot.id : BIGINT <<FK>>
+  crop_type.id : BIGINT <<FK>>
+  ..
+  plot_id extraction via (plot_collection,label,row,col)
+}
+
+entity "INSITU_MEASUREMENT" as ins {
+  * id: BIGINT <<PK, identity>>
+  --
+  trial.id : BIGINT <<FK>>
+  plot.id : BIGINT <<FK>>
+  acquisition_at : DATE/TIMESTAMPTZ "flexible: YYYY-MM-DD or ISO timestamp"
+  variable.id: BIGINT <<FK>>
+  value : NUMERIC <<nullable>>
+  unit.id : BIGINT <<FK>>
+  remarks : TEXT
+  ..
+  plot_id extraction via (plot_collection,label,row,col)
+}
+
+entity "UAV_FLIGHT" as flt {
+  * id: BIGINT <<PK, identity>>
+  --
+  trial.id : BIGINT <<FK>>
+  acquisition_at : TIMESTAMPTZ "flexible: YYYY-MM-DD or ISO timestamp"
+  path : TEXT <<unique>>
+  remarks : TEXT
+  ..
+}
+
+entity "ORTHOMOSAIC" as om {
+  * id: BIGINT <<PK, identity>>
+  --
+  uav_flight.id: BIGINT <<FK>>
+  variable.id : BIGINT <<FK>>
+  unit.id : BIGINT <<FK>>
+  path : TEXT 
+  sha256sum : VARCHAR(64)
+  
+}
+
+
+' ============================================================
+' Relationships
+' ============================================================
+
+pc ||--o{ plot : "collects"
+pc ||--o{ sdc : "composes"
+sd ||--o{ sdc : "consists of"
+sd ||--o{ dc : "(subdesign, category)"
+dsg ||--o{ dc : "is composed of"
+dsg ||--o{ trial : "is laid out as"
+
+trial ||--o{ pct : "has"
+trial ||--o{ pte : "has"
+trial ||--o{ ins : "has"
+trial ||--o{ flt : "has"
+
+plot ||--o{ pte : "receives"
+plot ||--o{ pct : "carries"
+plot ||--o{ ins : "measured on"
+
+tr ||--o{ pte : "classifies"
+ct ||--o{ pct : "classifies"
+var ||--o{ ins : "defines"
+unit ||--o{ ins : "defines"
+var ||--o{ om : "defines"
+
+
+
+@enduml
