@@ -103,7 +103,7 @@ def append_user_ids(
     return df
 
 
-def validate_uploaded_file(table_name: CsvTables, upload_file: UploadFile) -> None:
+def validate_uploaded_file(table_name: ManagedTables, upload_file: UploadFile) -> None:
     """Validate the input file for uploading to the Data Platform."""
     schema = SCHEMA_REGISTRY.get(ManagedTables(str(table_name)))
     if schema is None:
