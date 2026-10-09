@@ -7,7 +7,7 @@ import smbclient
 from fastapi import HTTPException, UploadFile, status
 from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session
+from sqlmodel import SQLModel, Session
 
 from src.models.base import (
     UploadModes,
@@ -222,27 +222,31 @@ def write_file_to_storage(table_name: ManagedTables, data: bytes) -> None:
         )
 
 
-def write_to_database(
+def apply_rows(
     session: Session,
     table_name: ManagedTables,
     rows: list[UploadRecord],
-) -> None:
-    """Write validated rows to the database as insert/update/delete.
+) -> list[SQLModel]:
+    """Apply rows (insert/update/delete) WITHOUT committing.
 
     Works for any table registered in SCHEMA_REGISTRY: the target
     table class comes from the registry, and each upload model carries its
     own fields, so model_dump() always produces valid column values.
 
-    All rows are applied within one session; a single commit at the end
-    makes the whole file atomic: either every row lands or none does.
+    The session is flushed at the end so surrogate (auto-increment) ids are
+    available to callers while nothing is persisted before the commit.
+    Returns the row instances for insert and update rows.
     """
     table = SCHEMA_REGISTRY[table_name].table_model
+    results: list[SQLModel] = []
 
     for row in rows:
         mode = row.mode  # every Insert/Update/Delete model has one
 
         if mode == UploadModes.INSERT:
-            session.add(table(**row.model_dump(exclude={"mode"})))
+            instance = table(**row.model_dump(exclude={"mode"}))
+            session.add(instance)
+            results.append(instance)
 
         elif mode == UploadModes.UPDATE:
             row_id = cast(
@@ -256,6 +260,7 @@ def write_to_database(
                 )
             for field, value in row.model_dump(exclude={"mode", "id"}).items():
                 setattr(existing, field, value)
+            results.append(existing)
 
         elif mode == UploadModes.DELETE:
             row_id = cast(
@@ -269,6 +274,15 @@ def write_to_database(
                 )
             session.delete(existing)
 
+    session.flush()
+    return results
+
+
+def commit_or_conflict(session: Session) -> None:
+    """Commit the session; on a constraint violation rollback + 409.
+
+    Keeps whole-file atomicity: either the caller's rows land or none does.
+    """
     try:
         session.commit()
     except IntegrityError as err:
@@ -277,6 +291,20 @@ def write_to_database(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Database constraint violation: {_integrity_error_detail(err)}",
         ) from err
+
+
+def write_to_database(
+    session: Session,
+    table_name: ManagedTables,
+    rows: list[UploadRecord],
+) -> None:
+    """Write validated rows to the database as insert/update/delete.
+
+    All rows are applied within one session; a single commit at the end
+    makes the whole file atomic: either every row lands or none does.
+    """
+    apply_rows(session, table_name, rows)
+    commit_or_conflict(session)
 
 
 def _integrity_error_detail(err: IntegrityError) -> str:
