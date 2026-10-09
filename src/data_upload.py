@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path, PureWindowsPath
 from typing import Any, Protocol, cast
@@ -7,14 +8,15 @@ import smbclient
 from fastapi import HTTPException, UploadFile, status
 from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session
+from sqlmodel import SQLModel, Session
 
 from src.models.base import (
     UploadModes,
 )
 from src.models.registry import (
     SCHEMA_REGISTRY,
-    UploadTables,
+    CsvTables,
+    ManagedTables,
 )
 from src.nas_helper import (
     Password as NasPw,
@@ -29,16 +31,16 @@ from src.nas_helper import (
 from src.settings import DeployStage, Infrastructure, Settings
 
 
-class UploadRow(Protocol):
-    """Structural type for Insert/Update/Delete row models."""
+class UploadRecord(Protocol):
+    """Structural type for Insert/Update/Delete upload models."""
 
     mode: object
 
     def model_dump(self, **kwargs: Any) -> dict[str, Any]: ...
 
 
-class UploadRowWithId(UploadRow, Protocol):
-    """Row model that also carries a primary key (Update/Delete)."""
+class UploadRecordWithId(UploadRecord, Protocol):
+    """Upload model that also carries a primary key (Update/Delete)."""
 
     id: int
 
@@ -53,14 +55,16 @@ def build_unc_upload_path(base_path: str, deploy_stage: DeployStage) -> PureWind
     return PureWindowsPath(base_path) / deploy_stage.value / "uploads"
 
 
-def build_upload_filename(table_name: UploadTables) -> str:
-    """Build a filename for upload
-    based on the current timestamp (UTC), table name, and file type."""
+def build_upload_filename(table_name: ManagedTables) -> str:
+    """Build the archive filename for an upload log.
+
+    Upload logs are always stored as normalized CSV,
+    representing data in database.
+    """
     now = datetime.now(tz=UTC)
     date_part = now.strftime("%Y%m%d_%H%M%S")  # 20260822_185612
     ms = now.microsecond // 1000  # microseconds -> milliseconds (0-999)
-    filetype = SCHEMA_REGISTRY[table_name].filetype
-    return f"{date_part}_{ms:03d}_{table_name}.{filetype.value}"
+    return f"{date_part}_{ms:03d}_{table_name}.csv"
 
 
 def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
@@ -91,19 +95,24 @@ def append_user_ids(
     df: pd.DataFrame, current_user_id: int, current_user: str
 ) -> pd.DataFrame:
     """Append user IDs to the DataFrame based on the table name.
-    The pydantic row models will use creato_id on insert and updater_id on update, so we add both here."""
+    The pydantic upload models will use creator_id on insert and updater_id on update, so we add both here."""
     df["creator_id"] = current_user_id
     df["updater_id"] = current_user_id
     df["user"] = current_user
     return df
 
 
-def validate_uploaded_file(table_name: UploadTables, upload_file: UploadFile) -> None:
+def validate_uploaded_file(table_name: ManagedTables, upload_file: UploadFile) -> None:
     """Validate the input file for uploading to the Data Platform."""
-    schema = SCHEMA_REGISTRY.get(table_name)
+    schema = SCHEMA_REGISTRY.get(ManagedTables(str(table_name)))
     if schema is None:
         raise HTTPException(
             status_code=400, detail=f"Unsupported table for upload: {table_name}"
+        )
+    if schema.filetype is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Table '{table_name.value}' has no upload file type.",
         )
     if upload_file.filename is None:
         raise HTTPException(
@@ -119,29 +128,31 @@ def validate_uploaded_file(table_name: UploadTables, upload_file: UploadFile) ->
 
 
 def validate_file_content(
-    df: pd.DataFrame, table_name: UploadTables
-) -> list[UploadRow]:
-    """Validate the data in the DataFrame against the corresponding Pydantic row model.
-    The row model is determined based on the table name using the SCHEMA_REGISTRY.
+    df: pd.DataFrame, table_name: CsvTables
+) -> list[UploadRecord]:
+    """Validate the data in the DataFrame against the corresponding Pydantic upload model.
+    The upload model is determined based on the table name using the SCHEMA_REGISTRY.
     """
 
-    validation_schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    validation_schema = SCHEMA_REGISTRY.get(ManagedTables(str(table_name)))
     if not validation_schema:
         raise HTTPException(
             status_code=400,
             detail=f"No validation schema found for table '{table_name}'",
         )
 
-    validated: list[UploadRow] = []
+    validated: list[UploadRecord] = []
     errors = []
     failed_rows = 0
 
-    row_adapter: TypeAdapter[UploadRow] = TypeAdapter(validation_schema.row_model)
+    upload_adapter: TypeAdapter[UploadRecord] = TypeAdapter(
+        validation_schema.upload_model
+    )
 
     records = df.to_dict(orient="records")
     for index, record in enumerate(records):
         try:
-            validated.append(row_adapter.validate_python(record))
+            validated.append(upload_adapter.validate_python(record))
 
         except ValidationError as row_error:
             failed_rows += 1
@@ -168,7 +179,7 @@ def validate_file_content(
     return validated
 
 
-def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
+def write_file_to_storage(table_name: ManagedTables, data: bytes) -> None:
     """Upload a file to the storage location (NAS or local) based on the infrastructure setting."""
 
     def _write_to_local_storage(path: Path, data: bytes) -> None:
@@ -184,7 +195,7 @@ def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
             f.write(data)
 
     settings = Settings()
-    filename = build_upload_filename(UploadTables(table_name))
+    filename = build_upload_filename(ManagedTables(str(table_name)))
 
     if settings.infrastructure == Infrastructure.LOCAL:
         local_upload_path = build_local_upload_path(
@@ -210,31 +221,35 @@ def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
         )
 
 
-def write_to_database(
+def apply_rows(
     session: Session,
-    table_name: UploadTables,
-    rows: list[UploadRow],
-) -> None:
-    """Write validated rows to the database as insert/update/delete.
+    table_name: ManagedTables,
+    rows: Sequence[UploadRecord],
+) -> list[SQLModel]:
+    """Apply rows (insert/update/delete) WITHOUT committing.
 
     Works for any table registered in SCHEMA_REGISTRY: the target
-    table class comes from the registry, and each row model carries its
+    table class comes from the registry, and each upload model carries its
     own fields, so model_dump() always produces valid column values.
 
-    All rows are applied within one session; a single commit at the end
-    makes the whole file atomic: either every row lands or none does.
+    The session is flushed at the end so surrogate (auto-increment) ids are
+    available to callers while nothing is persisted before the commit.
+    Returns the row instances for insert and update rows.
     """
     table = SCHEMA_REGISTRY[table_name].table_model
+    results: list[SQLModel] = []
 
     for row in rows:
         mode = row.mode  # every Insert/Update/Delete model has one
 
         if mode == UploadModes.INSERT:
-            session.add(table(**row.model_dump(exclude={"mode"})))
+            instance = table(**row.model_dump(exclude={"mode"}))
+            session.add(instance)
+            results.append(instance)
 
         elif mode == UploadModes.UPDATE:
             row_id = cast(
-                "UploadRowWithId", row
+                "UploadRecordWithId", row
             ).id  # guaranteed by validate_file_content
             existing = session.get(table, row_id)
             if existing is None:
@@ -244,10 +259,11 @@ def write_to_database(
                 )
             for field, value in row.model_dump(exclude={"mode", "id"}).items():
                 setattr(existing, field, value)
+            results.append(existing)
 
         elif mode == UploadModes.DELETE:
             row_id = cast(
-                "UploadRowWithId", row
+                "UploadRecordWithId", row
             ).id  # guaranteed by validate_file_content
             existing = session.get(table, row_id)
             if existing is None:
@@ -257,6 +273,15 @@ def write_to_database(
                 )
             session.delete(existing)
 
+    session.flush()
+    return results
+
+
+def commit_or_conflict(session: Session) -> None:
+    """Commit the session; on a constraint violation rollback + 409.
+
+    Keeps whole-file atomicity: either the caller's rows land or none does.
+    """
     try:
         session.commit()
     except IntegrityError as err:
@@ -265,6 +290,20 @@ def write_to_database(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Database constraint violation: {_integrity_error_detail(err)}",
         ) from err
+
+
+def write_to_database(
+    session: Session,
+    table_name: ManagedTables,
+    rows: list[UploadRecord],
+) -> None:
+    """Write validated rows to the database as insert/update/delete.
+
+    All rows are applied within one session; a single commit at the end
+    makes the whole file atomic: either every row lands or none does.
+    """
+    apply_rows(session, table_name, rows)
+    commit_or_conflict(session)
 
 
 def _integrity_error_detail(err: IntegrityError) -> str:
@@ -276,11 +315,11 @@ def _integrity_error_detail(err: IntegrityError) -> str:
     return detail or primary or str(err.orig)
 
 
-def build_upload_csv_template(table_name: UploadTables) -> str:
+def build_upload_csv_template(table_name: CsvTables) -> str:
     """Generates a csv template for data upload on the given table_name,
     based on the base model in SCHEMA_REGISTRY."""
 
-    validation_schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    validation_schema = SCHEMA_REGISTRY.get(ManagedTables(str(table_name)))
     if validation_schema is None:
         raise HTTPException(
             status_code=400, detail=f"Unsupported table for upload: {table_name}"

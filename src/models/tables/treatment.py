@@ -8,10 +8,10 @@ from src.models.base import AutoIncrementBase, DataLineageBase, Delete, Insert, 
 class TreatmentBase(SQLModel):
     """Base SQL model for the treatment table"""
 
-    name: str = Field(max_length=255)
-    code: str = Field(max_length=32, unique=True)
+    name: str = Field(sa_type=TEXT, unique=True)
+    code: str = Field(sa_type=TEXT, unique=True)
     description: str = Field(sa_type=TEXT)
-    doc_path: str = Field(sa_type=TEXT)
+    doc_path: str | None = Field(default=None, sa_type=TEXT)
 
 
 class TreatmentInsert(TreatmentBase, Insert):

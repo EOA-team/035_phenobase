@@ -1,5 +1,6 @@
 {
 "type": "FeatureCollection",
+"id": null,
 "name": "hypercover_crop_plots",
 "category": "crop",
 "mode": "insert",

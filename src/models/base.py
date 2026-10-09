@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel
-from sqlalchemy import DateTime
+from sqlalchemy import BIGINT, DateTime
 from sqlmodel import Field, SQLModel
 
 
@@ -55,13 +55,13 @@ class Delete(BaseModel):
 class AutoIncrementBase(SQLModel):
     """Base SQL model for auto-incrementing primary key."""
 
-    id: int | None = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, sa_type=BIGINT, primary_key=True)
 
 
 class DataLineageBase(SQLModel):
     """Base SQL model for data lineage information."""
 
-    creator_id: int = Field(foreign_key="users.id")
+    creator_id: int = Field(foreign_key="users.id", sa_type=BIGINT)
     created_at: datetime | None = Field(
         default_factory=utc_now,
         sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
@@ -70,7 +70,7 @@ class DataLineageBase(SQLModel):
         nullable=False,
         sa_column_kwargs={"default": utc_now},
     )
-    updater_id: int = Field(foreign_key="users.id")
+    updater_id: int = Field(foreign_key="users.id", sa_type=BIGINT)
     updated_at: datetime | None = Field(
         default_factory=utc_now,
         sa_type=DateTime(timezone=True),  # type: ignore[call-overload]
