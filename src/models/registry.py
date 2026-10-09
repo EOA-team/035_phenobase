@@ -83,9 +83,11 @@ class TableSchema:
     """Configuration for one API-managed table.
 
     base_model:   SQL Base Model , all other models are derived from this.
-    row_model:    A row model defined in src.models.row_models, used to validate uploaded records for this table.
-                  Type is resolved during runtime via the ``mode`` field, which discriminates between Insert, Update, and Delete variants.
-                  ``None`` marks tables without row models: (e.g. plots which are derived from plot_collection)
+    upload_model: The input validator for uploaded data of this table.
+                  CSV pipeline: discriminated row model defined in ``src.models.row_models``,
+                  validated per row, where ``mode`` discriminates between Insert, Update, and Delete variants.
+                  GeoJSON pipeline: header/feature models of the aggregate.
+                  ``None`` marks tables without an upload-wired input validator.
     table_model:  SQLModel class (declared with table=True) the validated records
                   are written to.
     read_model:   SQLModel class used as the API response model for reading this
@@ -97,9 +99,8 @@ class TableSchema:
     """
 
     base_model: type[BaseModel]
-    # Only select row_models from the row_models.py file despite type is Any
-    # Needed to select Any, because Static Type checking via Mypy is not possible here, as the row_model is defined during runtime.
-    row_model: Any
+    # Type is Any: static type checking via Mypy is not possible here, as the upload_model is resolved during runtime.
+    upload_model: Any
     table_model: type[SQLModel]
     read_model: type[SQLModel]
     filetype: UploadFileType | None = None
@@ -115,12 +116,12 @@ class TableSchema:
             )
 
 
-# Configuration for each API-managed table: row model(s), target table, read model,
+# Configuration for each API-managed table: upload model(s), target table, read model,
 # and accepted filetype.
 SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ManagedTables.CROP_TYPE: TableSchema(
         base_model=CropTypeBase,
-        row_model=CropTypeRow,
+        upload_model=CropTypeRow,
         table_model=CropType,
         read_model=CropType,
         filetype=UploadFileType.CSV,
@@ -138,7 +139,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.TREATMENT: TableSchema(
         base_model=TreatmentBase,
-        row_model=TreatmentRow,
+        upload_model=TreatmentRow,
         table_model=Treatment,
         read_model=Treatment,
         filetype=UploadFileType.CSV,
@@ -156,7 +157,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.UNIT: TableSchema(
         base_model=UnitBase,
-        row_model=UnitRow,
+        upload_model=UnitRow,
         table_model=Unit,
         read_model=Unit,
         filetype=UploadFileType.CSV,
@@ -173,7 +174,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.VARIABLE: TableSchema(
         base_model=VariableBase,
-        row_model=VariableRow,
+        upload_model=VariableRow,
         table_model=Variable,
         read_model=Variable,
         filetype=UploadFileType.CSV,
@@ -190,7 +191,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.USER: TableSchema(
         base_model=User,
-        row_model=UserRow,
+        upload_model=UserRow,
         table_model=User,
         read_model=User,
         filetype=UploadFileType.CSV,
@@ -206,7 +207,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.PLOT_COLLECTION: TableSchema(
         base_model=PlotCollectionBase,
-        row_model=None,
+        upload_model=None,
         table_model=PlotCollection,
         read_model=PlotCollection,
         filetype=UploadFileType.GEOJSON,
@@ -223,7 +224,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.PLOT: TableSchema(
         base_model=PlotBase,
-        row_model=None,
+        upload_model=None,
         table_model=Plot,
         read_model=Plot,
         read_order=[
