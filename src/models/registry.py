@@ -9,12 +9,12 @@ from sqlmodel import SQLModel
 
 from src.models.base import UploadFileType
 from src.models.upload_models import (
-    CropTypeRow,
+    CropTypeUpload,
     PlotCollectionUpload,
-    TreatmentRow,
-    UnitRow,
-    UserRow,
-    VariableRow,
+    TreatmentUpload,
+    UnitUpload,
+    UserUpload,
+    VariableUpload,
 )
 from src.models.tables.crop_type import (
     CropType,
@@ -86,7 +86,7 @@ class TableSchema:
 
     base_model:   SQL Base Model , all other models are derived from this.
     upload_model: The input validator for uploaded data of this table.
-                  CSV pipeline: discriminated row model defined in ``src.models.upload_models``,
+                  CSV pipeline: discriminated upload model defined in ``src.models.upload_models``,
                   validated per row, where ``mode`` discriminates between Insert, Update, and Delete variants.
                   GeoJSON pipeline: header/feature models of the aggregate.
                   ``None`` marks tables without an upload-wired input validator.
@@ -123,7 +123,7 @@ class TableSchema:
 SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ManagedTables.CROP_TYPE: TableSchema(
         base_model=CropTypeBase,
-        upload_model=CropTypeRow,
+        upload_model=CropTypeUpload,
         table_model=CropType,
         read_model=CropType,
         filetype=UploadFileType.CSV,
@@ -141,7 +141,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.TREATMENT: TableSchema(
         base_model=TreatmentBase,
-        upload_model=TreatmentRow,
+        upload_model=TreatmentUpload,
         table_model=Treatment,
         read_model=Treatment,
         filetype=UploadFileType.CSV,
@@ -159,7 +159,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.UNIT: TableSchema(
         base_model=UnitBase,
-        upload_model=UnitRow,
+        upload_model=UnitUpload,
         table_model=Unit,
         read_model=Unit,
         filetype=UploadFileType.CSV,
@@ -176,7 +176,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.VARIABLE: TableSchema(
         base_model=VariableBase,
-        upload_model=VariableRow,
+        upload_model=VariableUpload,
         table_model=Variable,
         read_model=Variable,
         filetype=UploadFileType.CSV,
@@ -193,7 +193,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.USER: TableSchema(
         base_model=User,
-        upload_model=UserRow,
+        upload_model=UserUpload,
         table_model=User,
         read_model=User,
         filetype=UploadFileType.CSV,

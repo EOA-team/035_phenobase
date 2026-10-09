@@ -30,16 +30,16 @@ from src.nas_helper import (
 from src.settings import DeployStage, Infrastructure, Settings
 
 
-class UploadRow(Protocol):
-    """Structural type for Insert/Update/Delete row models."""
+class UploadRecord(Protocol):
+    """Structural type for Insert/Update/Delete upload models."""
 
     mode: object
 
     def model_dump(self, **kwargs: Any) -> dict[str, Any]: ...
 
 
-class UploadRowWithId(UploadRow, Protocol):
-    """Row model that also carries a primary key (Update/Delete)."""
+class UploadRecordWithId(UploadRecord, Protocol):
+    """Upload model that also carries a primary key (Update/Delete)."""
 
     id: int
 
@@ -96,7 +96,7 @@ def append_user_ids(
     df: pd.DataFrame, current_user_id: int, current_user: str
 ) -> pd.DataFrame:
     """Append user IDs to the DataFrame based on the table name.
-    The pydantic row models will use creato_id on insert and updater_id on update, so we add both here."""
+    The pydantic upload models will use creator_id on insert and updater_id on update, so we add both here."""
     df["creator_id"] = current_user_id
     df["updater_id"] = current_user_id
     df["user"] = current_user
@@ -130,9 +130,9 @@ def validate_uploaded_file(table_name: CsvTables, upload_file: UploadFile) -> No
 
 def validate_file_content(
     df: pd.DataFrame, table_name: CsvTables
-) -> list[UploadRow]:
-    """Validate the data in the DataFrame against the corresponding Pydantic row model.
-    The row model is determined based on the table name using the SCHEMA_REGISTRY.
+) -> list[UploadRecord]:
+    """Validate the data in the DataFrame against the corresponding Pydantic upload model.
+    The upload model is determined based on the table name using the SCHEMA_REGISTRY.
     """
 
     validation_schema = SCHEMA_REGISTRY.get(ManagedTables(str(table_name)))
@@ -142,16 +142,18 @@ def validate_file_content(
             detail=f"No validation schema found for table '{table_name}'",
         )
 
-    validated: list[UploadRow] = []
+    validated: list[UploadRecord] = []
     errors = []
     failed_rows = 0
 
-    row_adapter: TypeAdapter[UploadRow] = TypeAdapter(validation_schema.upload_model)
+    upload_adapter: TypeAdapter[UploadRecord] = TypeAdapter(
+        validation_schema.upload_model
+    )
 
     records = df.to_dict(orient="records")
     for index, record in enumerate(records):
         try:
-            validated.append(row_adapter.validate_python(record))
+            validated.append(upload_adapter.validate_python(record))
 
         except ValidationError as row_error:
             failed_rows += 1
@@ -223,12 +225,12 @@ def write_file_to_storage(table_name: ManagedTables, data: bytes) -> None:
 def write_to_database(
     session: Session,
     table_name: ManagedTables,
-    rows: list[UploadRow],
+    rows: list[UploadRecord],
 ) -> None:
     """Write validated rows to the database as insert/update/delete.
 
     Works for any table registered in SCHEMA_REGISTRY: the target
-    table class comes from the registry, and each row model carries its
+    table class comes from the registry, and each upload model carries its
     own fields, so model_dump() always produces valid column values.
 
     All rows are applied within one session; a single commit at the end
@@ -244,7 +246,7 @@ def write_to_database(
 
         elif mode == UploadModes.UPDATE:
             row_id = cast(
-                "UploadRowWithId", row
+                "UploadRecordWithId", row
             ).id  # guaranteed by validate_file_content
             existing = session.get(table, row_id)
             if existing is None:
@@ -257,7 +259,7 @@ def write_to_database(
 
         elif mode == UploadModes.DELETE:
             row_id = cast(
-                "UploadRowWithId", row
+                "UploadRecordWithId", row
             ).id  # guaranteed by validate_file_content
             existing = session.get(table, row_id)
             if existing is None:

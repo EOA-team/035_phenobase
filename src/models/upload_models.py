@@ -1,9 +1,11 @@
 """Insert/Update/Delete upload-model unions for each table accessed via API.
 
-Each type alias is the discriminated union used to validate one uploaded
-record: pydantic uses ``mode`` to choose the Insert, Update, or Delete variant during runtime.
-CSV pipelines validate one row per alias; the GeoJSON header union validates
-the collection-level record of a plot collection upload.
+Each type alias (suffix ``Upload``) is the discriminated union used to validate
+one uploaded record: pydantic uses ``mode`` to choose the Insert, Update, or
+Delete variant during runtime. CSV pipelines validate one record per file row;
+the GeoJSON header union validates the collection-level record of a plot
+collection upload. Single-shape validators without a union (e.g. PlotFeature)
+live beside their table models.
 """
 
 from typing import Annotated
@@ -41,23 +43,23 @@ from src.models.tables.variable import (
     VariableUpdate,
 )
 
-type CropTypeRow = Annotated[
+type CropTypeUpload = Annotated[
     CropTypeInsert | CropTypeUpdate | CropTypeDelete,
     Field(discriminator="mode"),
 ]
-type TreatmentRow = Annotated[
+type TreatmentUpload = Annotated[
     TreatmentInsert | TreatmentUpdate | TreatmentDelete,
     Field(discriminator="mode"),
 ]
-type UnitRow = Annotated[
+type UnitUpload = Annotated[
     UnitInsert | UnitUpdate | UnitDelete,
     Field(discriminator="mode"),
 ]
-type VariableRow = Annotated[
+type VariableUpload = Annotated[
     VariableInsert | VariableUpdate | VariableDelete,
     Field(discriminator="mode"),
 ]
-type UserRow = Annotated[
+type UserUpload = Annotated[
     UserInsert | UserUpdate | UserDelete,
     Field(discriminator="mode"),
 ]
