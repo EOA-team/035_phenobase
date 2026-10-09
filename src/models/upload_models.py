@@ -1,7 +1,9 @@
-"""Insert/Update/Delete row-model unions for each table accessed via API.
+"""Insert/Update/Delete upload-model unions for each table accessed via API.
 
-Each ``*Row`` type alias is the discriminated union used to validate one uploaded
+Each type alias is the discriminated union used to validate one uploaded
 record: pydantic uses ``mode`` to choose the Insert, Update, or Delete variant during runtime.
+CSV pipelines validate one row per alias; the GeoJSON header union validates
+the collection-level record of a plot collection upload.
 """
 
 from typing import Annotated
@@ -12,6 +14,11 @@ from src.models.tables.crop_type import (
     CropTypeDelete,
     CropTypeInsert,
     CropTypeUpdate,
+)
+from src.models.tables.plot_collection import (
+    PlotCollectionDelete,
+    PlotCollectionInsert,
+    PlotCollectionUpdate,
 )
 from src.models.tables.treatment import (
     TreatmentDelete,
@@ -52,5 +59,9 @@ type VariableRow = Annotated[
 ]
 type UserRow = Annotated[
     UserInsert | UserUpdate | UserDelete,
+    Field(discriminator="mode"),
+]
+type PlotCollectionUpload = Annotated[
+    PlotCollectionInsert | PlotCollectionUpdate | PlotCollectionDelete,
     Field(discriminator="mode"),
 ]

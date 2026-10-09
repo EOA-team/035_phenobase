@@ -146,7 +146,7 @@ def validate_file_content(
     errors = []
     failed_rows = 0
 
-    row_adapter: TypeAdapter[UploadRow] = TypeAdapter(validation_schema.row_model)
+    row_adapter: TypeAdapter[UploadRow] = TypeAdapter(validation_schema.upload_model)
 
     records = df.to_dict(orient="records")
     for index, record in enumerate(records):

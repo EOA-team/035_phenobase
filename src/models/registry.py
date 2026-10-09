@@ -8,8 +8,9 @@ from pydantic import BaseModel
 from sqlmodel import SQLModel
 
 from src.models.base import UploadFileType
-from src.models.row_models import (
+from src.models.upload_models import (
     CropTypeRow,
+    PlotCollectionUpload,
     TreatmentRow,
     UnitRow,
     UserRow,
@@ -85,7 +86,7 @@ class TableSchema:
 
     base_model:   SQL Base Model , all other models are derived from this.
     upload_model: The input validator for uploaded data of this table.
-                  CSV pipeline: discriminated row model defined in ``src.models.row_models``,
+                  CSV pipeline: discriminated row model defined in ``src.models.upload_models``,
                   validated per row, where ``mode`` discriminates between Insert, Update, and Delete variants.
                   GeoJSON pipeline: header/feature models of the aggregate.
                   ``None`` marks tables without an upload-wired input validator.
@@ -208,7 +209,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.PLOT_COLLECTION: TableSchema(
         base_model=PlotCollectionBase,
-        upload_model=None,
+        upload_model=PlotCollectionUpload,
         table_model=PlotCollection,
         read_model=PlotCollection,
         filetype=UploadFileType.GEOJSON,
