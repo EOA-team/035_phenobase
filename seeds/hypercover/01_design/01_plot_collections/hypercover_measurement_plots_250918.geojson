@@ -1,5 +1,6 @@
 {
 "type": "FeatureCollection",
+"id": null,
 "name": "hypercover_measurement_plots_250918",
 "category": "measurement",
 "mode": "insert",
