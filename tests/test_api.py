@@ -84,7 +84,7 @@ def test_generate_api_key(phenobase_db_minimal):
 
 @pytest.mark.integration
 def test_insert_and_delete(phenobase_db_minimal):
-    """Test the POST /data/upload/{table_name} with INSERT and DELETE operations,
+    """Test the POST /data/upload/csv/{table_name} with INSERT and DELETE operations,
     then verify with GET /data/{table_name}"""
     csv_file_name = "unit_tbl_upload_dirty.csv"
     csv_file_path = TEST_CSVS_FOLDER / csv_file_name
@@ -92,7 +92,7 @@ def test_insert_and_delete(phenobase_db_minimal):
     client = TestClient(app)
     x_api_key_header = {"X-API-Key": os.getenv("MAX_MUSTERMANN_API_KEY")}
     response = client.post(
-        "data/upload/unit",
+        "data/upload/csv/unit",
         headers=x_api_key_header,
         files={"upload_file": (csv_file_name, csv_file_path.read_bytes(), "text/csv")},
     )
