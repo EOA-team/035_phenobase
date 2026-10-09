@@ -1,5 +1,6 @@
 {
 "type": "FeatureCollection",
+"id": null,
 "name": "zofe_treatment_plots",
 "category": "treatment",
 "mode": "insert",
