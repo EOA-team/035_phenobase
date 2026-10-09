@@ -55,17 +55,15 @@ def build_unc_upload_path(base_path: str, deploy_stage: DeployStage) -> PureWind
 
 
 def build_upload_filename(table_name: ManagedTables) -> str:
-    """Build a filename for upload
-    based on the current timestamp (UTC), table name, and file type."""
+    """Build the archive filename for an upload log.
+
+    Upload logs are always stored as normalized CSV,
+    representing data in database.
+    """
     now = datetime.now(tz=UTC)
     date_part = now.strftime("%Y%m%d_%H%M%S")  # 20260822_185612
     ms = now.microsecond // 1000  # microseconds -> milliseconds (0-999)
-    filetype = SCHEMA_REGISTRY[table_name].filetype
-    if filetype is None:
-        raise ValueError(
-            f"Table '{table_name.value}' is derived and has no upload file type."
-        )
-    return f"{date_part}_{ms:03d}_{table_name}.{filetype.value}"
+    return f"{date_part}_{ms:03d}_{table_name}.csv"
 
 
 def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
