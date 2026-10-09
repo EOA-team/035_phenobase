@@ -1,10 +1,21 @@
+"""GeoJSON Parser used plot_collections upload"""
+
 import json
+from typing import Any
 
 import pandas as pd
 from fastapi import HTTPException, UploadFile
+from geoalchemy2.elements import WKTElement
+from shapely.geometry import Polygon, shape
 from sqlmodel import Session, select
 
-from src.models.tables.plot_collection import PlotCollection
+from src.data_upload import apply_rows, commit_or_conflict
+from src.models.base import UploadModes
+from src.models.registry import ManagedTables
+from src.models.tables.plot import Plot, PlotDelete, PlotInsert
+from src.models.upload_models import PlotCollectionUpload
+
+SRID_REQUIRED = 2056
 
 
 def _extract_crs(parsed: dict) -> str | None:
@@ -45,18 +56,26 @@ def read_plot_collection(upload_file: UploadFile) -> tuple[pd.DataFrame, pd.Data
         properties = properties if isinstance(properties, dict) else {}
         records.append(
             {
+                "mode": "insert",  # feature rows are always inserts of the (new/replacement)
+                # plot set — one file always represents the whole plot set; the
+                # file's own mode lives in the header and governs the collection
+                # record (update = delete whole set + reinsert; delete = clear)
+                # and the plot_collection id
                 "label": properties.get("id"),  # id cannot be used in database --> rename to label
                 "row": properties.get("row"),
                 "col": properties.get("col"),
                 "geometry": feature.get("geometry"),
             }
         )
-    features_df = pd.DataFrame(records, columns=["label", "row", "col", "geometry"])
+    features_df = pd.DataFrame(
+        records, columns=["mode", "label", "row", "col", "geometry"]
+    )
 
     mode_raw = parsed.get("mode")
     header_df = pd.DataFrame(
         [
             {
+                "id": parsed.get("id"),
                 "mode": str(mode_raw).strip().lower() if isinstance(mode_raw, str) else None,
                 "name": parsed.get("name"),
                 "category": parsed.get("category"),
@@ -73,19 +92,70 @@ def read_plot_collection(upload_file: UploadFile) -> tuple[pd.DataFrame, pd.Data
     return header_df, features_df
 
 
-def resolve_plot_collection_id(session: Session, name: str) -> int:
-    """Resolve a human-readable collection name to its surrogate id.
+def _derive_plot_delete_records(
+    session: Session, collection_id: int
+) -> list[PlotDelete]:
+    """Derive delete records for every existing plot of a collection.
 
-    This is the embryonic resolver for update/delete targets: seeds address
-    rows by NAME while the tables connect via ids. Raises 422 when the
-    collection does not exist.
+    Plot ids are DB-borne (files don't carry them); the derivation turns them
+    into apply_rows-shaped DELETE records so the plot batch behaves like any
+    other table's delete rows.
     """
-    collection_id = session.exec(
-        select(PlotCollection.id).where(PlotCollection.name == name)
-    ).first()
-    if collection_id is None:
+    plot_ids = session.exec(
+        select(Plot.id).where(Plot.plot_collection_id == collection_id)
+    ).all()
+    return [PlotDelete(id=plot_id, mode="delete") for plot_id in plot_ids]
+
+
+def _geojson_to_wkt(geometry: dict[str, Any]) -> WKTElement:
+    """Normalize a raw GeoJSON geometry into a PostGIS-bound WKT element."""
+    try:
+        polygon = shape(geometry)
+    except (TypeError, ValueError) as err:
+        raise HTTPException(
+            status_code=422, detail=f"Invalid geometry: {err}"
+        ) from err
+    if not isinstance(polygon, Polygon):
         raise HTTPException(
             status_code=422,
-            detail=f"Plot collection '{name}' does not exist (required for update/delete).",
+            detail="Only Polygon geometries are supported, got "
+            f"{geometry.get('type')!r}.",
         )
-    return collection_id
+    return WKTElement(polygon.wkt, srid=SRID_REQUIRED)
+
+
+def apply_plot_collection(
+    session: Session,
+    header_record: PlotCollectionUpload,
+    plot_records: list[PlotInsert],
+) -> None:
+    """Write the validated aggregate in ONE transaction via the shared row engine.
+
+    The file represents its plot_collection plus the whole plot set: update
+    deletes and reinserts the set (only the collection row and its id
+    survive); delete clears everything; insert creates both. Every plot
+    batch goes through apply_rows exactly like every other table.
+    """
+    if header_record.mode == UploadModes.DELETE:
+        apply_rows(
+            session,
+            ManagedTables.PLOT,
+            _derive_plot_delete_records(session, header_record.id),
+        )
+        apply_rows(session, ManagedTables.PLOT_COLLECTION, [header_record])
+    else:  # INSERT / UPDATE
+        if header_record.mode == UploadModes.UPDATE:
+            apply_rows(
+                session,
+                ManagedTables.PLOT,
+                _derive_plot_delete_records(session, header_record.id),
+            )
+        collection = apply_rows(
+            session, ManagedTables.PLOT_COLLECTION, [header_record]
+        )[0]
+        for record in plot_records:
+            record.plot_collection_id = collection.id
+            record.geometry = _geojson_to_wkt(record.geometry)
+        apply_rows(session, ManagedTables.PLOT, plot_records)
+
+    commit_or_conflict(session)

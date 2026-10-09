@@ -19,7 +19,6 @@ from src.models.tables.crop_type import (
 from src.models.tables.plot import (
     PlotDelete,
     PlotInsert,
-    PlotUpdate,
 )
 from src.models.tables.plot_collection import (
     PlotCollectionDelete,
@@ -72,6 +71,6 @@ type PlotCollectionUpload = Annotated[
     Field(discriminator="mode"),
 ]
 type PlotUpload = Annotated[
-    PlotInsert | PlotUpdate | PlotDelete,
+    PlotInsert | PlotDelete,
     Field(discriminator="mode"),
 ]
