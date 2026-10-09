@@ -3,6 +3,7 @@
 from typing import Any
 
 from geoalchemy2 import Geometry
+from pydantic import model_validator
 from sqlalchemy import BIGINT, Column, UniqueConstraint
 from sqlmodel import TEXT, Field, SQLModel
 
@@ -30,3 +31,22 @@ class Plot(AutoIncrementBase, DataLineageBase, PlotBase, table=True):
             nullable=False,
         ),
     )
+
+
+class PlotFeature(SQLModel):
+    """Per-feature input validator for whole-collection plot uploads (GeoJSON)."""
+
+    label: str
+    row: int
+    col: int
+    geometry: dict[str, Any]
+
+    @model_validator(mode="after")
+    def label_matches_grid_position(self) -> "PlotFeature":
+        expected = f"x{self.col}_y{self.row}"
+        if self.label != expected:
+            raise ValueError(
+                f"Label '{self.label}' does not match grid position "
+                f"col={self.col}, row={self.row} (expected '{expected}')."
+            )
+        return self
