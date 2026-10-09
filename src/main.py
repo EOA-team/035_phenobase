@@ -20,7 +20,7 @@ from src.data_upload import (
 )
 from src.db import get_db_session
 from src.db_utils import get_db_table_as_pd, table_is_empty
-from src.models.registry import ManagedTables
+from src.models.registry import CsvTables, ManagedTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
 
 load_dotenv()
@@ -119,7 +119,7 @@ def get_table_data(
     ],
 )
 def get_upload_template(
-    table_name: ManagedTables,
+    table_name: CsvTables,
 ):
     """**Get upload template:**
     Returns a CSV template for uploading data to the specified table.
@@ -130,9 +130,9 @@ def get_upload_template(
     )
 
 
-@app.post("/data/upload/{table_name}")
+@app.post("/data/upload/csv/{table_name}")
 def upload_file(
-    table_name: ManagedTables,
+    table_name: CsvTables,
     upload_file: UploadFile,
     current_user: Annotated[
         UserRead, Depends(allow_roles(UserRole.writer, UserRole.admin))
@@ -145,7 +145,7 @@ def upload_file(
 
     Requires writer privileges (admin for the users table).
     """
-    if table_name == ManagedTables.USER and current_user.role != UserRole.admin:
+    if table_name == CsvTables.USER and current_user.role != UserRole.admin:
         raise HTTPException(
             status_code=403,
             detail="Admin privileges required to manage users.",
