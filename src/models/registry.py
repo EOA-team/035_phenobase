@@ -8,14 +8,6 @@ from pydantic import BaseModel
 from sqlmodel import SQLModel
 
 from src.models.base import UploadFileType
-from src.models.upload_models import (
-    CropTypeUpload,
-    PlotCollectionUpload,
-    TreatmentUpload,
-    UnitUpload,
-    UserUpload,
-    VariableUpload,
-)
 from src.models.tables.crop_type import (
     CropType,
     CropTypeBase,
@@ -43,6 +35,14 @@ from src.models.tables.user import (
 from src.models.tables.variable import (
     Variable,
     VariableBase,
+)
+from src.models.upload_models import (
+    CropTypeUpload,
+    PlotCollectionUpload,
+    TreatmentUpload,
+    UnitUpload,
+    UserUpload,
+    VariableUpload,
 )
 
 
