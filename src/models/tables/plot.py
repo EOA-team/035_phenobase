@@ -29,7 +29,7 @@ class PlotBase(SQLModel):
     col: int
     geometry: Any = Field(
         default=None,
-        sa_type=Geometry(geometry_type="POLYGON", srid=2056),
+        sa_type=Geometry(geometry_type="POLYGON", srid=2056),  # type: ignore[call-overload]
         nullable=False,
     )
 
