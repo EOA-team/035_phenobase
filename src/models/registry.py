@@ -36,15 +36,38 @@ from src.models.tables.variable import (
 )
 
 
-class ManagedTables(StrEnum):
-    """Tables managed by the Phenobase API."""
+class CsvTables(StrEnum):
+    """Tables uploadable as row-shaped CSV via /data/upload/csv/{table_name}."""
 
     CROP_TYPE = "crop_type"
     TREATMENT = "treatment"
     UNIT = "unit"
     VARIABLE = "variable"
     USER = "user"
-    ###Add here more
+
+
+class GeojsonTables(StrEnum):
+    """Aggregate tables owning one upload file each via /data/upload/geojson/{table_name}."""
+
+    PLOT_COLLECTION = "plot_collection"
+
+
+class DerivedTables(StrEnum):
+    """Tables with no upload identity of their own; populated exclusively via another table's file."""
+
+    PLOT = "plot"
+
+
+class ManagedTables(StrEnum):
+    """Tables managed by the Phenobase API."""
+
+    CROP_TYPE = CsvTables.CROP_TYPE.value
+    TREATMENT = CsvTables.TREATMENT.value
+    UNIT = CsvTables.UNIT.value
+    VARIABLE = CsvTables.VARIABLE.value
+    USER = CsvTables.USER.value
+    PLOT_COLLECTION = GeojsonTables.PLOT_COLLECTION.value
+    PLOT = DerivedTables.PLOT.value
 
 
 @dataclass(frozen=True)
