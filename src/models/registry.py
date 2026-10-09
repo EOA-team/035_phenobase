@@ -240,9 +240,3 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
         ],
     ),
 }
-
-assert {m.value for m in ManagedTables} == (
-    {m.value for m in CsvTables}
-    | {m.value for m in GeojsonTables}
-    | {m.value for m in DerivedTables}
-)

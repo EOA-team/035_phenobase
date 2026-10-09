@@ -25,7 +25,9 @@ class PlotCollectionDelete(Delete):
     """For deleting a plot_collection, only the id is needed."""
 
 
-class PlotCollection(AutoIncrementBase, DataLineageBase, PlotCollectionBase, table=True):
+class PlotCollection(
+    AutoIncrementBase, DataLineageBase, PlotCollectionBase, table=True
+):
     """SQLModel model for the plot_collection table."""
 
     __tablename__ = "plot_collections"
