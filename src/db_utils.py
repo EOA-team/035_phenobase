@@ -1,12 +1,12 @@
 import pandas as pd
 from sqlmodel import Session, select
 
-from src.models.registry import SCHEMA_REGISTRY, UploadTables
+from src.models.registry import SCHEMA_REGISTRY, ManagedTables
 
 
-def get_db_table_as_pd(session: Session, table_name: UploadTables) -> pd.DataFrame:
+def get_db_table_as_pd(session: Session, table_name: ManagedTables) -> pd.DataFrame:
     """Return all rows of a database table as a pandas DataFrame."""
-    schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    schema = SCHEMA_REGISTRY.get(ManagedTables(table_name))
     if schema is None:
         raise ValueError(f"Unsupported table: {table_name}")
     query = select(schema.table_model)
@@ -17,9 +17,9 @@ def get_db_table_as_pd(session: Session, table_name: UploadTables) -> pd.DataFra
     return df
 
 
-def table_is_empty(session: Session, table_name: UploadTables) -> bool:
+def table_is_empty(session: Session, table_name: ManagedTables) -> bool:
     """Return True if the given table has no rows."""
-    schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    schema = SCHEMA_REGISTRY.get(ManagedTables(table_name))
     if schema is None:
         raise ValueError(f"Unsupported table: {table_name}")
     return session.exec(select(schema.table_model).limit(1)).first() is None

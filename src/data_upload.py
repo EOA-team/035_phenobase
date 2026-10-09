@@ -14,7 +14,7 @@ from src.models.base import (
 )
 from src.models.registry import (
     SCHEMA_REGISTRY,
-    UploadTables,
+    ManagedTables,
 )
 from src.nas_helper import (
     Password as NasPw,
@@ -53,7 +53,7 @@ def build_unc_upload_path(base_path: str, deploy_stage: DeployStage) -> PureWind
     return PureWindowsPath(base_path) / deploy_stage.value / "uploads"
 
 
-def build_upload_filename(table_name: UploadTables) -> str:
+def build_upload_filename(table_name: ManagedTables) -> str:
     """Build a filename for upload
     based on the current timestamp (UTC), table name, and file type."""
     now = datetime.now(tz=UTC)
@@ -98,7 +98,7 @@ def append_user_ids(
     return df
 
 
-def validate_uploaded_file(table_name: UploadTables, upload_file: UploadFile) -> None:
+def validate_uploaded_file(table_name: ManagedTables, upload_file: UploadFile) -> None:
     """Validate the input file for uploading to the Data Platform."""
     schema = SCHEMA_REGISTRY.get(table_name)
     if schema is None:
@@ -119,13 +119,13 @@ def validate_uploaded_file(table_name: UploadTables, upload_file: UploadFile) ->
 
 
 def validate_file_content(
-    df: pd.DataFrame, table_name: UploadTables
+    df: pd.DataFrame, table_name: ManagedTables
 ) -> list[UploadRow]:
     """Validate the data in the DataFrame against the corresponding Pydantic row model.
     The row model is determined based on the table name using the SCHEMA_REGISTRY.
     """
 
-    validation_schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    validation_schema = SCHEMA_REGISTRY.get(ManagedTables(table_name))
     if not validation_schema:
         raise HTTPException(
             status_code=400,
@@ -168,7 +168,7 @@ def validate_file_content(
     return validated
 
 
-def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
+def write_file_to_storage(table_name: ManagedTables, data: bytes) -> None:
     """Upload a file to the storage location (NAS or local) based on the infrastructure setting."""
 
     def _write_to_local_storage(path: Path, data: bytes) -> None:
@@ -184,7 +184,7 @@ def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
             f.write(data)
 
     settings = Settings()
-    filename = build_upload_filename(UploadTables(table_name))
+    filename = build_upload_filename(ManagedTables(table_name))
 
     if settings.infrastructure == Infrastructure.LOCAL:
         local_upload_path = build_local_upload_path(
@@ -212,7 +212,7 @@ def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
 
 def write_to_database(
     session: Session,
-    table_name: UploadTables,
+    table_name: ManagedTables,
     rows: list[UploadRow],
 ) -> None:
     """Write validated rows to the database as insert/update/delete.
@@ -276,11 +276,11 @@ def _integrity_error_detail(err: IntegrityError) -> str:
     return detail or primary or str(err.orig)
 
 
-def build_upload_csv_template(table_name: UploadTables) -> str:
+def build_upload_csv_template(table_name: ManagedTables) -> str:
     """Generates a csv template for data upload on the given table_name,
     based on the base model in SCHEMA_REGISTRY."""
 
-    validation_schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    validation_schema = SCHEMA_REGISTRY.get(ManagedTables(table_name))
     if validation_schema is None:
         raise HTTPException(
             status_code=400, detail=f"Unsupported table for upload: {table_name}"

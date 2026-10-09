@@ -36,7 +36,7 @@ from src.models.tables.variable import (
 )
 
 
-class UploadTables(StrEnum):
+class ManagedTables(StrEnum):
     """Tables managed by the Phenobase API."""
 
     CROP_TYPE = "crop_type"
@@ -84,8 +84,8 @@ class TableSchema:
 
 # Configuration for each API-managed table: row model(s), target table, read model,
 # and accepted filetype.
-SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
-    UploadTables.CROP_TYPE: TableSchema(
+SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
+    ManagedTables.CROP_TYPE: TableSchema(
         base_model=CropTypeBase,
         row_model=CropTypeRow,
         table_model=CropType,
@@ -103,7 +103,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
             "doc_path",
         ],
     ),
-    UploadTables.TREATMENT: TableSchema(
+    ManagedTables.TREATMENT: TableSchema(
         base_model=TreatmentBase,
         row_model=TreatmentRow,
         table_model=Treatment,
@@ -121,7 +121,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
             "doc_path",
         ],
     ),
-    UploadTables.UNIT: TableSchema(
+    ManagedTables.UNIT: TableSchema(
         base_model=UnitBase,
         row_model=UnitRow,
         table_model=Unit,
@@ -138,7 +138,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
             "updated_at",
         ],
     ),
-    UploadTables.VARIABLE: TableSchema(
+    ManagedTables.VARIABLE: TableSchema(
         base_model=VariableBase,
         row_model=VariableRow,
         table_model=Variable,
@@ -155,7 +155,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
             "updated_at",
         ],
     ),
-    UploadTables.USER: TableSchema(
+    ManagedTables.USER: TableSchema(
         base_model=User,
         row_model=UserRow,
         table_model=User,

@@ -20,7 +20,7 @@ from src.data_upload import (
 )
 from src.db import get_db_session
 from src.db_utils import get_db_table_as_pd, table_is_empty
-from src.models.registry import UploadTables
+from src.models.registry import ManagedTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
 
 load_dotenv()
@@ -85,7 +85,7 @@ def api_key_hash_pair() -> APIKeyHashRead:
     ],
 )
 def get_table_data(
-    table_name: UploadTables,
+    table_name: ManagedTables,
     session: Annotated[Session, Depends(get_db_session)],
     current_user: Annotated[UserRead, Depends(get_current_user)],
 ):
@@ -95,7 +95,7 @@ def get_table_data(
     Require at admin privileges for users table
     Require at least reader privileges for all other tables.
     """
-    if table_name == UploadTables.USER and current_user.role != UserRole.admin:
+    if table_name == ManagedTables.USER and current_user.role != UserRole.admin:
         raise HTTPException(
             status_code=403,
             detail="Admin privileges required to read user data.",
@@ -119,7 +119,7 @@ def get_table_data(
     ],
 )
 def get_upload_template(
-    table_name: UploadTables,
+    table_name: ManagedTables,
 ):
     """**Get upload template:**
     Returns a CSV template for uploading data to the specified table.
@@ -132,7 +132,7 @@ def get_upload_template(
 
 @app.post("/data/upload/{table_name}")
 def upload_file(
-    table_name: UploadTables,
+    table_name: ManagedTables,
     upload_file: UploadFile,
     current_user: Annotated[
         UserRead, Depends(allow_roles(UserRole.writer, UserRole.admin))
@@ -145,7 +145,7 @@ def upload_file(
 
     Requires writer privileges (admin for the users table).
     """
-    if table_name == UploadTables.USER and current_user.role != UserRole.admin:
+    if table_name == ManagedTables.USER and current_user.role != UserRole.admin:
         raise HTTPException(
             status_code=403,
             detail="Admin privileges required to manage users.",
