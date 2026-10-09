@@ -15,7 +15,6 @@ from src.models.tables.crop_type import (
 from src.models.tables.plot import (
     Plot,
     PlotBase,
-    PlotFeature,
 )
 from src.models.tables.plot_collection import (
     PlotCollection,
@@ -226,7 +225,7 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
     ),
     ManagedTables.PLOT: TableSchema(
         base_model=PlotBase,
-        upload_model=PlotFeature,
+        upload_model=PlotUpload,
         table_model=Plot,
         read_model=Plot,
         read_order=[

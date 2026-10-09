@@ -4,8 +4,7 @@ Each type alias (suffix ``Upload``) is the discriminated union used to validate
 one uploaded record: pydantic uses ``mode`` to choose the Insert, Update, or
 Delete variant during runtime. CSV pipelines validate one record per file row;
 the GeoJSON header union validates the collection-level record of a plot
-collection upload. Single-shape validators without a union (e.g. PlotFeature)
-live beside their table models.
+collection upload, the plot union validates one row per plot/feature.
 """
 
 from typing import Annotated
@@ -16,6 +15,11 @@ from src.models.tables.crop_type import (
     CropTypeDelete,
     CropTypeInsert,
     CropTypeUpdate,
+)
+from src.models.tables.plot import (
+    PlotDelete,
+    PlotInsert,
+    PlotUpdate,
 )
 from src.models.tables.plot_collection import (
     PlotCollectionDelete,
@@ -65,5 +69,9 @@ type UserUpload = Annotated[
 ]
 type PlotCollectionUpload = Annotated[
     PlotCollectionInsert | PlotCollectionUpdate | PlotCollectionDelete,
+    Field(discriminator="mode"),
+]
+type PlotUpload = Annotated[
+    PlotInsert | PlotUpdate | PlotDelete,
     Field(discriminator="mode"),
 ]
