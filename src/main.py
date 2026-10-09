@@ -157,10 +157,16 @@ def upload_file(
         current_user=current_user.firstname + " " + current_user.lastname,
     )
     validated_rows = validate_file_content(df=df, table_name=table_name)
-    write_to_database(session=session, table_name=table_name, rows=validated_rows)
+    write_to_database(
+        session=session,
+        table_name=ManagedTables(str(table_name)),
+        rows=validated_rows,
+    )
 
     upload_csv = df.to_csv(index=False, sep=";", encoding="utf-8")
-    write_file_to_storage(table_name=table_name, data=upload_csv.encode("utf-8"))
+    write_file_to_storage(
+        table_name=ManagedTables(str(table_name)), data=upload_csv.encode("utf-8")
+    )
 
     return Response(
         content=f"File {upload_file.filename}  successfully commited to Data Platform",

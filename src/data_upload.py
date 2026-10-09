@@ -14,6 +14,7 @@ from src.models.base import (
 )
 from src.models.registry import (
     SCHEMA_REGISTRY,
+    CsvTables,
     ManagedTables,
 )
 from src.nas_helper import (
@@ -60,6 +61,10 @@ def build_upload_filename(table_name: ManagedTables) -> str:
     date_part = now.strftime("%Y%m%d_%H%M%S")  # 20260822_185612
     ms = now.microsecond // 1000  # microseconds -> milliseconds (0-999)
     filetype = SCHEMA_REGISTRY[table_name].filetype
+    if filetype is None:
+        raise ValueError(
+            f"Table '{table_name.value}' is derived and has no upload file type."
+        )
     return f"{date_part}_{ms:03d}_{table_name}.{filetype.value}"
 
 
@@ -98,12 +103,17 @@ def append_user_ids(
     return df
 
 
-def validate_uploaded_file(table_name: ManagedTables, upload_file: UploadFile) -> None:
+def validate_uploaded_file(table_name: CsvTables, upload_file: UploadFile) -> None:
     """Validate the input file for uploading to the Data Platform."""
-    schema = SCHEMA_REGISTRY.get(table_name)
+    schema = SCHEMA_REGISTRY.get(ManagedTables(str(table_name)))
     if schema is None:
         raise HTTPException(
             status_code=400, detail=f"Unsupported table for upload: {table_name}"
+        )
+    if schema.filetype is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Table '{table_name.value}' has no upload file type.",
         )
     if upload_file.filename is None:
         raise HTTPException(
@@ -119,13 +129,13 @@ def validate_uploaded_file(table_name: ManagedTables, upload_file: UploadFile) -
 
 
 def validate_file_content(
-    df: pd.DataFrame, table_name: ManagedTables
+    df: pd.DataFrame, table_name: CsvTables
 ) -> list[UploadRow]:
     """Validate the data in the DataFrame against the corresponding Pydantic row model.
     The row model is determined based on the table name using the SCHEMA_REGISTRY.
     """
 
-    validation_schema = SCHEMA_REGISTRY.get(ManagedTables(table_name))
+    validation_schema = SCHEMA_REGISTRY.get(ManagedTables(str(table_name)))
     if not validation_schema:
         raise HTTPException(
             status_code=400,
@@ -184,7 +194,7 @@ def write_file_to_storage(table_name: ManagedTables, data: bytes) -> None:
             f.write(data)
 
     settings = Settings()
-    filename = build_upload_filename(ManagedTables(table_name))
+    filename = build_upload_filename(ManagedTables(str(table_name)))
 
     if settings.infrastructure == Infrastructure.LOCAL:
         local_upload_path = build_local_upload_path(
@@ -276,11 +286,11 @@ def _integrity_error_detail(err: IntegrityError) -> str:
     return detail or primary or str(err.orig)
 
 
-def build_upload_csv_template(table_name: ManagedTables) -> str:
+def build_upload_csv_template(table_name: CsvTables) -> str:
     """Generates a csv template for data upload on the given table_name,
     based on the base model in SCHEMA_REGISTRY."""
 
-    validation_schema = SCHEMA_REGISTRY.get(ManagedTables(table_name))
+    validation_schema = SCHEMA_REGISTRY.get(ManagedTables(str(table_name)))
     if validation_schema is None:
         raise HTTPException(
             status_code=400, detail=f"Unsupported table for upload: {table_name}"
