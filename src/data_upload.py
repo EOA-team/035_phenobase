@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path, PureWindowsPath
 from typing import Any, Protocol, cast
@@ -223,7 +224,7 @@ def write_file_to_storage(table_name: ManagedTables, data: bytes) -> None:
 def apply_rows(
     session: Session,
     table_name: ManagedTables,
-    rows: list[UploadRecord],
+    rows: Sequence[UploadRecord],
 ) -> list[SQLModel]:
     """Apply rows (insert/update/delete) WITHOUT committing.
 
