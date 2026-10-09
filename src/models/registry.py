@@ -85,14 +85,15 @@ class TableSchema:
     base_model:   SQL Base Model , all other models are derived from this.
     row_model:    A row model defined in src.models.row_models, used to validate uploaded records for this table.
                   Type is resolved during runtime via the ``mode`` field, which discriminates between Insert, Update, and Delete variants.
-                  ``None`` marks tables without row models: they are written via whole-collection uploads, not the CSV row pipeline.
+                  ``None`` marks tables without row models: (e.g. plots which are derived from plot_collection)
     table_model:  SQLModel class (declared with table=True) the validated records
                   are written to.
     read_model:   SQLModel class used as the API response model for reading this
                   table.
     read_order:   Optional explicit column order for reading this table. If None,
                   the model's natural field order is used.
-    filetype:     File format the API accepts for this table.
+    filetype:     File format the API accepts for this table; ``None`` for derived
+                  tables (e.g. plots) .
     """
 
     base_model: type[BaseModel]
@@ -101,7 +102,7 @@ class TableSchema:
     row_model: Any
     table_model: type[SQLModel]
     read_model: type[SQLModel]
-    filetype: UploadFileType
+    filetype: UploadFileType | None = None
     read_order: list[str] | None = None
 
     def __post_init__(self) -> None:
@@ -225,7 +226,6 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
         row_model=None,
         table_model=Plot,
         read_model=Plot,
-        filetype=UploadFileType.GEOJSON,
         read_order=[
             "id",
             "plot_collection_id",
