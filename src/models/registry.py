@@ -19,6 +19,14 @@ from src.models.tables.crop_type import (
     CropType,
     CropTypeBase,
 )
+from src.models.tables.plot import (
+    Plot,
+    PlotBase,
+)
+from src.models.tables.plot_collection import (
+    PlotCollection,
+    PlotCollectionBase,
+)
 from src.models.tables.treatment import (
     Treatment,
     TreatmentBase,
@@ -77,6 +85,7 @@ class TableSchema:
     base_model:   SQL Base Model , all other models are derived from this.
     row_model:    A row model defined in src.models.row_models, used to validate uploaded records for this table.
                   Type is resolved during runtime via the ``mode`` field, which discriminates between Insert, Update, and Delete variants.
+                  ``None`` marks tables without row models: they are written via whole-collection uploads, not the CSV row pipeline.
     table_model:  SQLModel class (declared with table=True) the validated records
                   are written to.
     read_model:   SQLModel class used as the API response model for reading this
@@ -194,4 +203,46 @@ SCHEMA_REGISTRY: dict[ManagedTables, TableSchema] = {
             "email",
         ],
     ),
+    ManagedTables.PLOT_COLLECTION: TableSchema(
+        base_model=PlotCollectionBase,
+        row_model=None,
+        table_model=PlotCollection,
+        read_model=PlotCollection,
+        filetype=UploadFileType.GEOJSON,
+        read_order=[
+            "id",
+            "name",
+            "category",
+            "crs",
+            "creator_id",
+            "created_at",
+            "updater_id",
+            "updated_at",
+        ],
+    ),
+    ManagedTables.PLOT: TableSchema(
+        base_model=PlotBase,
+        row_model=None,
+        table_model=Plot,
+        read_model=Plot,
+        filetype=UploadFileType.GEOJSON,
+        read_order=[
+            "id",
+            "plot_collection_id",
+            "label",
+            "row",
+            "col",
+            "creator_id",
+            "created_at",
+            "updater_id",
+            "updated_at",
+            "geometry",
+        ],
+    ),
 }
+
+assert {m.value for m in ManagedTables} == (
+    {m.value for m in CsvTables}
+    | {m.value for m in GeojsonTables}
+    | {m.value for m in DerivedTables}
+)
