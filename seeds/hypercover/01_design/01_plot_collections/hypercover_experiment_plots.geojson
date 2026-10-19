@@ -1,5 +1,6 @@
 {
 "type": "FeatureCollection",
+"id": null,
 "name": "hypercover_experiment_plots",
 "category": "experiment",
 "mode": "insert",
