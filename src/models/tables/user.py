@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel
-from sqlmodel import Field, SQLModel
+from sqlmodel import TEXT, Field, SQLModel
 
 from src.models.base import AutoIncrementBase, Delete, UploadModes
 
@@ -48,12 +48,12 @@ class APIKeyHashRead(BaseModel):
 class UserBase(SQLModel):
     """Base SQL model for the users table."""
 
-    f_account: str | None = Field(default=None, max_length=32, unique=True)
-    firstname: str = Field(max_length=255)
-    lastname: str = Field(max_length=255)
-    status: UserStatus = Field(max_length=32)
-    role: UserRole | None = Field(default=None, max_length=32)
-    email: str = Field(max_length=255)
+    f_account: str | None = Field(default=None, sa_type=TEXT, unique=True)
+    firstname: str = Field(sa_type=TEXT)
+    lastname: str = Field(sa_type=TEXT)
+    status: UserStatus = Field(sa_type=TEXT)
+    role: UserRole | None = Field(default=None, sa_type=TEXT)
+    email: str = Field(sa_type=TEXT)
 
 
 class UserInsert(UserBase):
