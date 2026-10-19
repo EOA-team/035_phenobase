@@ -62,6 +62,13 @@ def build_upload_filename(table_name: UploadTables) -> str:
     filetype = SCHEMA_REGISTRY[table_name].filetype
     return f"{date_part}_{ms:03d}_{table_name}.{filetype.value}"
 
+def sanitize_null_values(df: pd.DataFrame) -> pd.DataFrame:
+    """Sanitize all Pandas Null values (pd.NA, np.nan) to None for consistency."""
+    mask = df.notna()
+    new_df = df.astype(object).where(mask, None)  # Replace NaN with None
+    return new_df
+
+
 
 def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
     """Read the uploaded file into a pandas DataFrame based on its file type."""
@@ -80,8 +87,7 @@ def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
     # Make sure "Insert" or "Update" is treated the same as "insert" or "update" (lowercase)
     if "mode" in raw_df.columns:
         raw_df["mode"] = raw_df["mode"].str.lower()  # Lower on modes
-    # Replace pandas NA and NaN with None for consistency
-    df = raw_df.replace({pd.NA: None, float("nan"): None})
+    df = sanitize_null_values(raw_df)
 
     upload_file.file.seek(0)  # Reset file pointer to the beginning for re-reading
     return df
@@ -242,7 +248,10 @@ def write_to_database(
                     status_code=422,
                     detail=f"Cannot update: {table.__tablename__} id={row_id} does not exist",
                 )
-            for field, value in row.model_dump(exclude={"mode", "id"}).items():
+            for field, value in row.model_dump(
+                    exclude={"mode", "id"},
+                    exclude_none=True  # only update fields that are not None
+            ).items():
                 setattr(existing, field, value)
 
         elif mode == UploadModes.DELETE:

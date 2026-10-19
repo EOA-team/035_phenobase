@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
@@ -43,6 +43,16 @@ class Update(BaseModel):
     id: int
     mode: Literal[UploadModes.UPDATE]
     updater_id: int
+
+    @model_validator(mode="after")
+    def require_one_mutable_field(self):
+        """Require at least one mutable field besides id, mode, and updater_id for update operations."""
+        provided_fields = self.model_fields_set - {"id", "mode", "updater_id"}
+        if all(getattr(self, field) is None for field in provided_fields):
+            raise ValueError(
+                "At least one mutable field must be provided for update operations besides id, mode, and updater_id."
+            )
+        return self
 
 
 class Delete(BaseModel):

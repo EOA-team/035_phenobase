@@ -1,0 +1,19 @@
+[
+  {
+    "name": "soybean",
+    "code": "SY",
+    "description": "Nitrogen-fixing grain legume; vital break crop in cereal rotations with high protein efficiency.",
+    "doc_path": "doc/SY"
+  },
+  {
+    "name": "sugar beet",
+    "code": "SB",
+    "description": "Root crop harvested for sugar production; high nutrient demand"
+  },
+  {
+    "name": "temporary grasland",
+    "code": "TG",
+    "description": "Multi-year grass or grass-legume ley; forage production and soil cover",
+    "doc_path": "doc/TG"
+  }
+]
