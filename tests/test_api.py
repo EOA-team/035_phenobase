@@ -18,7 +18,7 @@ TEST_CSVS_FOLDER = Path(__file__).parent / "test_csvs"
 
 
 @pytest.mark.unit
-def test_health_check(phenobase_db_minimal):
+def test_health_check():
     """Health endpoint returns 200 with status ok."""
     client = TestClient(app)
     response = client.get("/health")
