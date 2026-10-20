@@ -16,10 +16,10 @@ from src.data_upload import (
     validate_file_content,
     validate_uploaded_file,
     write_file_to_storage,
-    write_to_database,
 )
 from src.db import get_db_session
 from src.db_utils import get_db_table_as_pd, table_is_empty
+from src.db_write import write_to_database
 from src.models.registry import UploadTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
 

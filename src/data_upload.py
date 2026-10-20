@@ -1,21 +1,16 @@
 from datetime import UTC, datetime
 from pathlib import Path, PureWindowsPath
-from typing import Any, Protocol, cast
 
 import pandas as pd
 import smbclient
 from fastapi import HTTPException, UploadFile, status
 from pydantic import TypeAdapter, ValidationError
-from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session
 
-from src.models.base import (
-    UploadModes,
-)
 from src.models.registry import (
     SCHEMA_REGISTRY,
     UploadTables,
 )
+from src.models.row_models import UploadRow
 from src.nas_helper import (
     Password as NasPw,
 )
@@ -27,20 +22,6 @@ from src.nas_helper import (
     connect_to_nas,
 )
 from src.settings import DeployStage, Infrastructure, Settings
-
-
-class UploadRow(Protocol):
-    """Structural type for Insert/Update/Delete row models."""
-
-    mode: object
-
-    def model_dump(self, **kwargs: Any) -> dict[str, Any]: ...
-
-
-class UploadRowWithId(UploadRow, Protocol):
-    """Row model that also carries a primary key (Update/Delete)."""
-
-    id: int
 
 
 def build_local_upload_path(base_path: str, deploy_stage: DeployStage) -> Path:
@@ -208,72 +189,6 @@ def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
             status_code=500,
             detail=f"Unsupported infrastructure: {settings.infrastructure}",
         )
-
-
-def write_to_database(
-    session: Session,
-    table_name: UploadTables,
-    rows: list[UploadRow],
-) -> None:
-    """Write validated rows to the database as insert/update/delete.
-
-    Works for any table registered in SCHEMA_REGISTRY: the target
-    table class comes from the registry, and each row model carries its
-    own fields, so model_dump() always produces valid column values.
-
-    All rows are applied within one session; a single commit at the end
-    makes the whole file atomic: either every row lands or none does.
-    """
-    table = SCHEMA_REGISTRY[table_name].table_model
-
-    for row in rows:
-        mode = row.mode  # every Insert/Update/Delete model has one
-
-        if mode == UploadModes.INSERT:
-            session.add(table(**row.model_dump(exclude={"mode"})))
-
-        elif mode == UploadModes.UPDATE:
-            row_id = cast(
-                "UploadRowWithId", row
-            ).id  # guaranteed by validate_file_content
-            existing = session.get(table, row_id)
-            if existing is None:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Cannot update: {table.__tablename__} id={row_id} does not exist",
-                )
-            for field, value in row.model_dump(exclude={"mode", "id"}).items():
-                setattr(existing, field, value)
-
-        elif mode == UploadModes.DELETE:
-            row_id = cast(
-                "UploadRowWithId", row
-            ).id  # guaranteed by validate_file_content
-            existing = session.get(table, row_id)
-            if existing is None:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Cannot delete: {table.__tablename__} id={row_id} does not exist",
-                )
-            session.delete(existing)
-
-    try:
-        session.commit()
-    except IntegrityError as err:
-        session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Database constraint violation: {_integrity_error_detail(err)}",
-        ) from err
-
-
-def _integrity_error_detail(err: IntegrityError) -> str:
-    diag = getattr(err.orig, "diag", None)
-    primary = getattr(diag, "message_primary", None)
-    detail = getattr(diag, "message_detail", None)
-    if primary and detail:
-        return f"{primary} ({detail})"
-    return detail or primary or str(err.orig)
 
 
 def build_upload_csv_template(table_name: UploadTables) -> str:
