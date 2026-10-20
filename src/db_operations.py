@@ -4,7 +4,8 @@ Intended to replace ``write_to_database`` in ``src/data_upload.py``.
 
 from typing import cast
 
-from sqlmodel import Session, SQLModel
+import pandas as pd
+from sqlmodel import Session, SQLModel, select
 
 from src.models.base import UploadModes
 from src.models.registry import SCHEMA_REGISTRY, UploadTables
@@ -76,3 +77,22 @@ def _delete_row(session: Session, table: type[SQLModel], row: UploadRow) -> None
     if obj is None:
         raise IdNotFoundError(str(table.__tablename__), row_id)
     session.delete(obj)
+
+
+def table_is_empty(session: Session, table_name: UploadTables) -> bool:
+    """Return True if the given table has no rows."""
+    schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    if schema is None:
+        raise ValueError(f"Unsupported table: {table_name}")
+    return session.exec(select(schema.table_model).limit(1)).first() is None
+
+
+def get_db_table(session: Session, table_name: UploadTables) -> pd.DataFrame:
+    """Return all rows of a database table as a pandas DataFrame."""
+    schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    if schema is None:
+        raise ValueError(f"Unsupported table: {table_name}")
+    query = select(schema.table_model)
+    rows = list(session.exec(query).all())
+    df = pd.DataFrame([row.model_dump() for row in rows])
+    return df

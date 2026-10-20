@@ -16,8 +16,7 @@ from src.data_upload import (
     write_file_to_storage,
 )
 from src.db import get_db_session
-from src.db_utils import get_db_table_as_pd, table_is_empty
-from src.db_operations import write_to_database
+from src.db_operations import get_db_table, table_is_empty, write_to_database
 from src.models.registry import UploadTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
 from src.parser import parse_csv
@@ -105,7 +104,7 @@ def get_table_data(
             content=f"Table '{table_name}' is currently empty.",
             status_code=200,
         )
-    df = get_db_table_as_pd(session=session, table_name=table_name)
+    df = get_db_table(session=session, table_name=table_name)
     return Response(
         content=df.to_csv(index=False, sep=";", encoding="utf-8"),
         media_type="text/csv",
