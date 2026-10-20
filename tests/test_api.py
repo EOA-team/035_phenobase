@@ -18,7 +18,7 @@ TEST_CSVS_FOLDER = Path(__file__).parent / "test_csvs"
 
 
 @pytest.mark.unit
-def test_health_check():
+def test_health_check(phenobase_db_minimal):
     """Health endpoint returns 200 with status ok."""
     client = TestClient(app)
     response = client.get("/health")
@@ -39,7 +39,7 @@ def test_api_info():
 
 
 @pytest.mark.integration
-def test_auth_me_valid():
+def test_auth_me_valid(phenobase_db_minimal):
     """Test the /auth/me endpoint with a valid API key."""
     client = TestClient(app)
 
@@ -57,7 +57,7 @@ def test_auth_me_valid():
 
 
 @pytest.mark.integration
-def test_auth_me_invalid():
+def test_auth_me_invalid(phenobase_db_minimal):
     """Test the /auth/me endpoint with an invalid API key."""
     client = TestClient(app)
     headers = {"X-API-Key": "a_wrong_api_key"}
@@ -67,7 +67,7 @@ def test_auth_me_invalid():
 
 
 @pytest.mark.integration
-def test_generate_api_key():
+def test_generate_api_key(phenobase_db_minimal):
     """Test the /admin/generate-api-key endpoint."""
     client = TestClient(app)
     headers = {"X-API-Key": os.getenv("SABRINA_SCHINDLER_API_KEY")}
@@ -83,7 +83,7 @@ def test_generate_api_key():
 
 
 @pytest.mark.integration
-def test_insert_and_delete():
+def test_insert_and_delete(phenobase_db_minimal):
     """Test the POST /data/upload/{table_name} with INSERT and DELETE operations,
     then verify with GET /data/{table_name}"""
     csv_file_name = "unit_tbl_upload_dirty.csv"
