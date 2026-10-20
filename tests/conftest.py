@@ -39,5 +39,5 @@ def phenobase_db_minimal():
         )
         session.add_all([User(**user) for user in users])
         session.commit()
-        yield session  # Provide the session to the test functions
-        SQLModel.metadata.drop_all(engine)  # Clean up after tests
+    yield
+    SQLModel.metadata.drop_all(engine)  # Clean up after tests
