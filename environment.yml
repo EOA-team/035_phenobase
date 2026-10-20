@@ -23,5 +23,8 @@ dependencies:
   - psycopg
   - pandas
   - pandas-stubs
+  - nbstripout
+  - geoalchemy2
+  - shapely
   #- pip:
   # pip-only packages go here if needed

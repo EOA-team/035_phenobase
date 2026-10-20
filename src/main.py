@@ -2,7 +2,7 @@
 Docstring for src.main
 """
 
-from typing import Annotated
+from typing import Annotated, cast
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Response, UploadFile
@@ -20,8 +20,14 @@ from src.data_upload import (
 )
 from src.db import get_db_session
 from src.db_utils import get_db_table_as_pd, table_is_empty
-from src.models.registry import UploadTables
+from src.geojson_upload import (
+    apply_plot_collection,
+    read_plot_collection,
+)
+from src.models.registry import CsvTables, ManagedTables
+from src.models.tables.plot import PlotInsert
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
+from src.models.upload_models import PlotCollectionUpload
 
 load_dotenv()
 
@@ -85,7 +91,7 @@ def api_key_hash_pair() -> APIKeyHashRead:
     ],
 )
 def get_table_data(
-    table_name: UploadTables,
+    table_name: ManagedTables,
     session: Annotated[Session, Depends(get_db_session)],
     current_user: Annotated[UserRead, Depends(get_current_user)],
 ):
@@ -95,7 +101,7 @@ def get_table_data(
     Require at admin privileges for users table
     Require at least reader privileges for all other tables.
     """
-    if table_name == UploadTables.USER and current_user.role != UserRole.admin:
+    if table_name == ManagedTables.USER and current_user.role != UserRole.admin:
         raise HTTPException(
             status_code=403,
             detail="Admin privileges required to read user data.",
@@ -119,7 +125,7 @@ def get_table_data(
     ],
 )
 def get_upload_template(
-    table_name: UploadTables,
+    table_name: CsvTables,
 ):
     """**Get upload template:**
     Returns a CSV template for uploading data to the specified table.
@@ -130,9 +136,9 @@ def get_upload_template(
     )
 
 
-@app.post("/data/upload/{table_name}")
+@app.post("/data/upload/csv/{table_name}")
 def upload_file(
-    table_name: UploadTables,
+    table_name: CsvTables,
     upload_file: UploadFile,
     current_user: Annotated[
         UserRead, Depends(allow_roles(UserRole.writer, UserRole.admin))
@@ -145,7 +151,7 @@ def upload_file(
 
     Requires writer privileges (admin for the users table).
     """
-    if table_name == UploadTables.USER and current_user.role != UserRole.admin:
+    if table_name == CsvTables.USER and current_user.role != UserRole.admin:
         raise HTTPException(
             status_code=403,
             detail="Admin privileges required to manage users.",
@@ -157,10 +163,80 @@ def upload_file(
         current_user=current_user.firstname + " " + current_user.lastname,
     )
     validated_rows = validate_file_content(df=df, table_name=table_name)
-    write_to_database(session=session, table_name=table_name, rows=validated_rows)
+    write_to_database(
+        session=session,
+        table_name=ManagedTables(str(table_name)),
+        rows=validated_rows,
+    )
 
     upload_csv = df.to_csv(index=False, sep=";", encoding="utf-8")
-    write_file_to_storage(table_name=table_name, data=upload_csv.encode("utf-8"))
+    write_file_to_storage(
+        table_name=ManagedTables(str(table_name)), data=upload_csv.encode("utf-8")
+    )
+
+    return Response(
+        content=f"File {upload_file.filename}  successfully commited to Data Platform",
+        status_code=200,
+    )
+
+
+@app.post("/data/upload/geojson/plot_collection")
+def upload_plot_collection(
+    upload_file: UploadFile,
+    current_user: Annotated[
+        UserRead, Depends(allow_roles(UserRole.writer, UserRole.admin))
+    ],
+    session: Annotated[Session, Depends(get_db_session)],
+):
+    """**Upload plot collection:**
+    Uploads a GeoJSON FeatureCollection to the plot_collections and plots
+    tables in one transaction: either the collection and its whole plot set
+    land or nothing does (update deletes and reinserts the plot set, only
+    the collection row and its id survive; delete clears everything).
+
+    The file's header carries the plot_collection (id blank on insert,
+    required on update/delete); every feature becomes one plot row.
+    Archives the normalized header and plot records as CSV upload logs.
+
+    Requires writer privileges.
+    """
+    validate_uploaded_file(
+        upload_file=upload_file, table_name=ManagedTables.PLOT_COLLECTION
+    )
+    header_df, plot_df = read_plot_collection(upload_file=upload_file)
+    full_name = current_user.firstname + " " + current_user.lastname
+    header_df = append_user_ids(
+        df=header_df, current_user_id=current_user.id, current_user=full_name
+    )
+    plot_df = append_user_ids(
+        df=plot_df, current_user_id=current_user.id, current_user=full_name
+    )
+
+    header_record = cast(
+        "PlotCollectionUpload",
+        validate_file_content(
+            df=header_df, table_name=ManagedTables.PLOT_COLLECTION
+        )[0],
+    )
+    plot_records = cast(
+        "list[PlotInsert]",
+        validate_file_content(df=plot_df, table_name=ManagedTables.PLOT),
+    )
+
+    apply_plot_collection(
+        session=session,
+        header_record=header_record,
+        plot_records=plot_records,
+    )
+
+    header_csv = header_df.to_csv(index=False, sep=";", encoding="utf-8")
+    write_file_to_storage(
+        table_name=ManagedTables.PLOT_COLLECTION, data=header_csv.encode("utf-8")
+    )
+    plot_csv = plot_df.to_csv(index=False, sep=";", encoding="utf-8")
+    write_file_to_storage(
+        table_name=ManagedTables.PLOT, data=plot_csv.encode("utf-8")
+    )
 
     return Response(
         content=f"File {upload_file.filename}  successfully commited to Data Platform",

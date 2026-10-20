@@ -7,7 +7,15 @@ from sqlmodel import SQLModel
 from src.db import get_engine_postgresql
 
 # Tables used by SQLModel metadata
-from src.models.tables import crop_type, treatment, unit, user, variable  # noqa: F401
+from src.models.tables import (  # noqa: F401
+    crop_type,
+    plot,
+    plot_collection,
+    treatment,
+    unit,
+    user,
+    variable,
+)
 from src.scripts.script_utils import confirm_production
 from src.settings import DeployStage, Settings
 
