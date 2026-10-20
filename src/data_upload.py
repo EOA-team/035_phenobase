@@ -44,41 +44,6 @@ def build_upload_filename(table_name: UploadTables) -> str:
     return f"{date_part}_{ms:03d}_{table_name}.{filetype.value}"
 
 
-def read_upload_file(upload_file: UploadFile) -> pd.DataFrame:
-    """Read the uploaded file into a pandas DataFrame based on its file type."""
-    raw_df = pd.read_csv(
-        upload_file.file,
-        sep=None,  # Pandas auto sniffs the separator
-        engine="python",
-        encoding="utf-8-sig",  # automatically remove Excel BOM artifacts safely
-    )
-
-    # Basic Clearning
-    raw_df.columns = raw_df.columns.str.lower()  # Lower on headers
-    raw_df.columns = raw_df.columns.str.strip()  # Strip whitespace on headers
-    # Strip whitespace (e.g. modes " insert" or "update " instead of "insert" or "update")
-    raw_df = raw_df.map(lambda x: x.strip() if isinstance(x, str) else x)
-    # Make sure "Insert" or "Update" is treated the same as "insert" or "update" (lowercase)
-    if "mode" in raw_df.columns:
-        raw_df["mode"] = raw_df["mode"].str.lower()  # Lower on modes
-    # Replace pandas NA and NaN with None for consistency
-    df = raw_df.replace({pd.NA: None, float("nan"): None})
-
-    upload_file.file.seek(0)  # Reset file pointer to the beginning for re-reading
-    return df
-
-
-def append_user_ids(
-    df: pd.DataFrame, current_user_id: int, current_user: str
-) -> pd.DataFrame:
-    """Append user IDs to the DataFrame based on the table name.
-    The pydantic row models will use creato_id on insert and updater_id on update, so we add both here."""
-    df["creator_id"] = current_user_id
-    df["updater_id"] = current_user_id
-    df["user"] = current_user
-    return df
-
-
 def validate_uploaded_file(table_name: UploadTables, upload_file: UploadFile) -> None:
     """Validate the input file for uploading to the Data Platform."""
     schema = SCHEMA_REGISTRY.get(table_name)

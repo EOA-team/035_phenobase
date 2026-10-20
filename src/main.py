@@ -10,9 +10,7 @@ from sqlmodel import Session
 
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
 from src.data_upload import (
-    append_user_ids,
     build_upload_csv_template,
-    read_upload_file,
     validate_file_content,
     validate_uploaded_file,
     write_file_to_storage,
@@ -22,6 +20,8 @@ from src.db_utils import get_db_table_as_pd, table_is_empty
 from src.db_write import write_to_database
 from src.models.registry import UploadTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
+from src.parser import parse_csv
+from src.preprocessing import prepare_dataframe
 
 load_dotenv()
 
@@ -151,15 +151,12 @@ def upload_file(
             detail="Admin privileges required to manage users.",
         )
     validate_uploaded_file(upload_file=upload_file, table_name=table_name)
-    df = append_user_ids(
-        df=read_upload_file(upload_file=upload_file),
-        current_user_id=current_user.id,
-        current_user=current_user.firstname + " " + current_user.lastname,
-    )
-    validated_rows = validate_file_content(df=df, table_name=table_name)
+    raw_df = parse_csv(upload_file=upload_file)
+    prep_df = prepare_dataframe(parsed_df=raw_df, user=current_user)
+    validated_rows = validate_file_content(df=prep_df, table_name=table_name)
     write_to_database(session=session, table_name=table_name, rows=validated_rows)
 
-    upload_csv = df.to_csv(index=False, sep=";", encoding="utf-8")
+    upload_csv = prep_df.to_csv(index=False, sep=";", encoding="utf-8")
     write_file_to_storage(table_name=table_name, data=upload_csv.encode("utf-8"))
 
     return Response(
