@@ -29,6 +29,7 @@ from src.models.tables.unit import (
 )
 from src.models.tables.user import (
     User,
+    UserBase,
 )
 from src.models.tables.variable import (
     Variable,
@@ -156,7 +157,7 @@ SCHEMA_REGISTRY: dict[UploadTables, TableSchema] = {
         ],
     ),
     UploadTables.USER: TableSchema(
-        base_model=User,
+        base_model=UserBase,
         row_model=UserRow,
         table_model=User,
         read_model=User,

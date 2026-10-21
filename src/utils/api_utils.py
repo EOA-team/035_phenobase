@@ -45,4 +45,4 @@ def build_upload_csv_template(table_name: UploadTables) -> str:
 
     rows = [columns, insert_row, update_row, delete_row]
 
-    return "\n".join(";".join(row) for row in rows) + "\n"
+    return "\n".join(",".join(row) for row in rows) + "\n"
