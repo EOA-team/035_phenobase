@@ -9,48 +9,46 @@ from src.models.row_models import UploadRow
 
 
 class UploadValidationError(Exception):
-    """Row-level validation of an uploaded file failed."""
-
-    def __init__(self, failed_rows: int, errors: list[dict]):
-        super().__init__(f"{failed_rows} invalid rows in file")
-        self.failed_rows = failed_rows
+    def __init__(self, total_entries: int, errors: list[dict], max_shown: int = 20):
+        self.total_entries = total_entries
         self.errors = errors
+        self.failed_entries = len({e["index"] for e in errors})
+
+        lines = [f"{self.failed_entries} of {total_entries} entries are invalid:"]
+        for e in errors[:max_shown]:
+            lines.append(
+                f"  - index {e['index']}, column '{e['column']}': {e['message']} (got {e['value']!r})"
+            )
+        if len(errors) > max_shown:
+            lines.append(f"  ... and {len(errors) - max_shown} more errors")
+
+        super().__init__("\n".join(lines))
 
 
 def validate_file_content(
     df: pd.DataFrame, table_name: UploadTables
 ) -> list[UploadRow]:
-    """Validate the data in the DataFrame against the corresponding Pydantic row model.
-    The row model is determined based on the table name using the SCHEMA_REGISTRY.
-    """
-
-    validation_schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
-    if validation_schema is None:
+    schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
+    if schema is None:
         raise ValueError(f"No validation schema found for table: {table_name}")
 
-    validated: list[UploadRow] = []
-    errors: list[dict] = []
-    failed_rows = 0
+    adapter = TypeAdapter(schema.row_model)
+    validated, errors = [], []
 
-    row_adapter: TypeAdapter[UploadRow] = TypeAdapter(validation_schema.row_model)
-
-    records = df.to_dict(orient="records")
-    for index, record in enumerate(records):
+    for index, record in zip(df.index, df.to_dict(orient="records"), strict=True):
         try:
-            validated.append(row_adapter.validate_python(record))
-
-        except ValidationError as row_error:
-            failed_rows += 1
-            line = index + 2  # +2 to account for header and 0-indexing
-            for err in row_error.errors(include_url=False, include_context=False):
+            validated.append(adapter.validate_python(record))
+        except ValidationError as exc:
+            for err in exc.errors(include_url=False, include_context=False):
                 errors.append(
                     {
-                        "code": err.get("type", "value_error"),
-                        "loc": ["line", line, *err.get("loc", ())],
-                        "msg": err.get("msg", "Unknown validation error"),
+                        "index": index,
+                        "column": ".".join(map(str, err["loc"])),
+                        "message": err["msg"],
+                        "value": str(err.get("input")),
                     }
                 )
 
-    if failed_rows:
-        raise UploadValidationError(failed_rows=failed_rows, errors=errors)
+    if errors:
+        raise UploadValidationError(len(df), errors)
     return validated

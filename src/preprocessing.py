@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.models.tables.user import UserRead
+from src.models.tables.user import User
 
 
 def _normalize_headers(df: pd.DataFrame) -> pd.DataFrame:
@@ -40,7 +40,7 @@ def _clean_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
     return _sanitize_null_values(df)
 
 
-def _add_data_lineage(df: pd.DataFrame, user: UserRead) -> pd.DataFrame:
+def _add_data_lineage(df: pd.DataFrame, user: User) -> pd.DataFrame:
     """Append user IDs to the DataFrame based on the table name.
     The pydantic row models will use creator_id on insert and updater_id on update, so we add both here."""
     df["creator_id"] = user.id  # required for insert model
@@ -51,7 +51,7 @@ def _add_data_lineage(df: pd.DataFrame, user: UserRead) -> pd.DataFrame:
     return df
 
 
-def prepare_dataframe(parsed_df: pd.DataFrame, user: UserRead) -> pd.DataFrame:
+def prepare_dataframe(parsed_df: pd.DataFrame, user: User) -> pd.DataFrame:
     """Prepare Daframe for pydanrtic validation"""
     df = _clean_dataframe(parsed_df)
     df = _add_data_lineage(df, user)
