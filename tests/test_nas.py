@@ -18,8 +18,9 @@ from dotenv import load_dotenv
 from smbprotocol.exceptions import SMBOSError
 from smbprotocol.header import NtStatus
 
-from src.file_utils import get_sha256sum, write_random_file
-from src.nas_helper import (
+from src.settings import Settings
+from src.utils.file_utils import get_sha256sum, write_random_file
+from src.utils.nas_utils import (
     FileSizeUnit,
     Password,
     User,
@@ -28,7 +29,6 @@ from src.nas_helper import (
     copy_from_nas_to_local,
     copy_from_nas_to_nas,
 )
-from src.settings import Settings
 
 load_dotenv()
 

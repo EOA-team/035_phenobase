@@ -1,8 +1,8 @@
 import pytest
 
 from src.db_session import get_database_name, get_engine_postgresql
-from src.nas_helper import build_unc_path
 from src.settings import Settings
+from src.utils.nas_utils import build_unc_path
 
 
 @pytest.mark.integration

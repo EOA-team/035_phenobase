@@ -11,17 +11,17 @@ from src.models.registry import (
     UploadTables,
 )
 from src.models.row_models import UploadRow
-from src.nas_helper import (
+from src.settings import DeployStage, Infrastructure, Settings
+from src.utils.nas_utils import (
     Password as NasPw,
 )
-from src.nas_helper import (
+from src.utils.nas_utils import (
     User as NasUser,
 )
-from src.nas_helper import (
+from src.utils.nas_utils import (
     build_unc_path,
     connect_to_nas,
 )
-from src.settings import DeployStage, Infrastructure, Settings
 
 
 def build_local_upload_path(base_path: str, deploy_stage: DeployStage) -> Path:

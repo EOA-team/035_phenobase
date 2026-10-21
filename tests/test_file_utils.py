@@ -7,8 +7,12 @@ skbclient.open_file() is tested in integration_tests in test_nas.py
 
 import pytest
 
-from src.file_utils import get_sha256sum, get_sha256sum_last_chunk, write_random_file
-from src.nas_helper import FileSizeUnit, build_unc_path
+from src.utils.file_utils import (
+    get_sha256sum,
+    get_sha256sum_last_chunk,
+    write_random_file,
+)
+from src.utils.nas_utils import FileSizeUnit, build_unc_path
 
 FILESIZE = FileSizeUnit.MB * 10
 CHUNKSIZE = FileSizeUnit.MB * 1
