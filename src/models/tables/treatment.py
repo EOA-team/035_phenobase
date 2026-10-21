@@ -20,6 +20,7 @@ class TreatmentInsert(TreatmentBase, Insert):
 
 class TreatmentUpdate(Update):
     """For updating id, mode and at least one mutable field are needed."""
+
     name: str | None = Field(sa_type=TEXT, unique=True)
     code: str | None = Field(sa_type=TEXT, unique=True)
     description: str | None = Field(sa_type=TEXT)

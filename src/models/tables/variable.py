@@ -20,10 +20,12 @@ class VariableInsert(VariableBase, Insert):
 
 class VariableUpdate(Update):
     """For updating id, mode and at least one mutable field are needed."""
+
     name: str | None = Field(sa_type=TEXT, unique=True)
     code: str | None = Field(sa_type=TEXT, unique=True)
     description: str | None = Field(sa_type=TEXT)
     doc_path: str | None = Field(default=None, sa_type=TEXT)
+
 
 class VariableDelete(Delete):
     """For deleting a Variable, only the id is needed."""
