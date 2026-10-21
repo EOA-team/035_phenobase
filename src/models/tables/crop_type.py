@@ -8,10 +8,10 @@ from src.models.base import AutoIncrementBase, DataLineageBase, Delete, Insert, 
 class CropTypeBase(SQLModel):
     """Base SQL model for the crop_type table"""
 
-    name: str = Field(max_length=255)
-    code: str = Field(max_length=32, unique=True)
+    name: str = Field(sa_type=TEXT, unique=True)
+    code: str = Field(sa_type=TEXT, unique=True)
     description: str = Field(sa_type=TEXT)
-    doc_path: str = Field(sa_type=TEXT)
+    doc_path: str | None = Field(default=None, sa_type=TEXT)
 
 
 class CropTypeInsert(CropTypeBase, Insert):
