@@ -10,7 +10,6 @@ from sqlmodel import Session
 
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
 from src.data_upload import (
-    validate_file_content,
     write_file_to_storage,
 )
 from src.db_operations import get_db_table, table_is_empty, write_to_database
@@ -23,6 +22,7 @@ from src.utils.api_utils import (
     build_upload_csv_template,
     validate_uploaded_file,
 )
+from src.validation import validate_file_content
 
 load_dotenv()
 

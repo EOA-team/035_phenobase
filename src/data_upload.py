@@ -1,16 +1,13 @@
 from datetime import UTC, datetime
 from pathlib import Path, PureWindowsPath
 
-import pandas as pd
 import smbclient
-from fastapi import HTTPException, status
-from pydantic import TypeAdapter, ValidationError
+from fastapi import HTTPException
 
 from src.models.registry import (
     SCHEMA_REGISTRY,
     UploadTables,
 )
-from src.models.row_models import UploadRow
 from src.settings import DeployStage, Infrastructure, Settings
 from src.utils.nas_utils import (
     Password as NasPw,
@@ -42,56 +39,6 @@ def build_upload_filename(table_name: UploadTables) -> str:
     ms = now.microsecond // 1000  # microseconds -> milliseconds (0-999)
     filetype = SCHEMA_REGISTRY[table_name].filetype
     return f"{date_part}_{ms:03d}_{table_name}.{filetype.value}"
-
-
-def validate_file_content(
-    df: pd.DataFrame, table_name: UploadTables
-) -> list[UploadRow]:
-    """Validate the data in the DataFrame against the corresponding Pydantic row model.
-    The row model is determined based on the table name using the SCHEMA_REGISTRY.
-    """
-
-    validation_schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
-    if not validation_schema:
-        raise HTTPException(
-            status_code=400,
-            detail=f"No validation schema found for table '{table_name}'",
-        )
-
-    validated: list[UploadRow] = []
-    errors = []
-    failed_rows = 0
-
-    row_adapter: TypeAdapter[UploadRow] = TypeAdapter(validation_schema.row_model)
-
-    records = df.to_dict(orient="records")
-    for index, record in enumerate(records):
-        try:
-            validated.append(row_adapter.validate_python(record))
-
-        except ValidationError as row_error:
-            failed_rows += 1
-            line = index + 2  # +2 to account for header and 0-indexing
-            for err in row_error.errors(include_url=False, include_context=False):
-                errors.append(
-                    {
-                        "code": err.get("type", "value_error"),
-                        "loc": ["line", line, *err.get("loc", ())],
-                        "msg": err.get("msg", "Unknown validation error"),
-                    }
-                )
-
-    if failed_rows:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={
-                "type": "validation_error",
-                "title": "File validation failed",
-                "failed_rows": failed_rows,
-                "errors": errors,
-            },
-        )
-    return validated
 
 
 def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
