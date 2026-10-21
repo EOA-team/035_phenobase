@@ -15,8 +15,8 @@ from src.data_upload import (
     validate_uploaded_file,
     write_file_to_storage,
 )
-from src.db import get_db_session
 from src.db_operations import get_db_table, table_is_empty, write_to_database
+from src.db_session import get_db_session
 from src.models.registry import UploadTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
 from src.parser import parse_csv

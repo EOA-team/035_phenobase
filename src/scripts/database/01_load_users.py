@@ -9,7 +9,7 @@ import smbclient
 from dotenv import load_dotenv
 from sqlmodel import Session, select
 
-from src.db import get_engine_postgresql
+from src.db_session import get_engine_postgresql
 from src.models.tables.user import User
 from src.nas_helper import Password as NasPw
 from src.nas_helper import User as NasUser

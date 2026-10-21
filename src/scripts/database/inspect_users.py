@@ -4,7 +4,7 @@ import pandas as pd
 from sqlalchemy import inspect
 from sqlmodel import select
 
-from src.db import get_engine_postgresql
+from src.db_session import get_engine_postgresql
 from src.models.tables.user import User
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import Depends, Header, HTTPException
 from sqlmodel import Session, select
 
-from src.db import get_db_session
+from src.db_session import get_db_session
 from src.models.tables.user import APIKeyHashRead, User, UserRole
 
 
