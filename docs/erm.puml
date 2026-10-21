@@ -19,7 +19,7 @@ entity "USER" as usr {
   firstname : TEXT
   lastname : TEXT
   status : TEXT 
-  role : TEXT 
+  role : TEXT <<nullable>>
   email : TEXT
   key_hash : VARCHAR(64) <<unique, nullable>>
 }

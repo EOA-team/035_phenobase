@@ -18,8 +18,12 @@ class TreatmentInsert(TreatmentBase, Insert):
     """For inserting the id is not needed, as it will be auto-generated."""
 
 
-class TreatmentUpdate(TreatmentBase, Update):
-    """For updating the id and all other fields are needed."""
+class TreatmentUpdate(Update):
+    """For updating id, mode and at least one mutable field are needed."""
+    name: str | None = Field(sa_type=TEXT, unique=True)
+    code: str | None = Field(sa_type=TEXT, unique=True)
+    description: str | None = Field(sa_type=TEXT)
+    doc_path: str | None = Field(default=None, sa_type=TEXT)
 
 
 class TreatmentDelete(Delete):

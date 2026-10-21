@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import BaseModel
 from sqlmodel import TEXT, Field, SQLModel
 
-from src.models.base import AutoIncrementBase, Delete, UploadModes
+from src.models.base import AutoIncrementBase, Delete, Insert, Update
 
 
 class UserRole(StrEnum):
@@ -54,21 +54,22 @@ class UserBase(SQLModel):
     status: UserStatus = Field(sa_type=TEXT)
     role: UserRole | None = Field(default=None, sa_type=TEXT)
     email: str = Field(sa_type=TEXT)
+    key_hash: str | None = Field(default=None, max_length=64, unique=True)
 
 
-class UserInsert(UserBase):
-    """For inserting a new user. key_hash is provided by the admin."""
-
-    mode: Literal[UploadModes.INSERT]
-    key_hash: str | None = None
+class UserInsert(UserBase, Insert):
+    """For inserting the id is not needed, as it will be auto-generated."""
 
 
-class UserUpdate(UserBase):
-    """For updating an existing user. key_hash is not modifiable."""
-
-    id: int
-    mode: Literal[UploadModes.UPDATE]
-    key_hash: str | None = None
+class UserUpdate(Update):
+    """For updating id, mode and at least one mutable field are needed."""
+    f_account: str | None = Field(default=None, sa_type=TEXT, unique=True)
+    firstname: str | None  = Field(sa_type=TEXT)
+    lastname: str | None = Field(sa_type=TEXT)
+    status: UserStatus | None = Field(sa_type=TEXT)
+    role: UserRole | None = Field(default=None, sa_type=TEXT)
+    email: str | None = Field(sa_type=TEXT)
+    key_hash: str | None = Field(default=None, max_length=64, unique=True)
 
 
 class UserDelete(Delete):
@@ -79,4 +80,3 @@ class User(AutoIncrementBase, UserBase, table=True):
     """SQLModel model for the users table."""
 
     __tablename__ = "users"
-    key_hash: str | None = Field(default=None, max_length=64, unique=True)
