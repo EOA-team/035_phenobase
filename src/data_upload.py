@@ -3,7 +3,7 @@ from pathlib import Path, PureWindowsPath
 
 import pandas as pd
 import smbclient
-from fastapi import HTTPException, UploadFile, status
+from fastapi import HTTPException, status
 from pydantic import TypeAdapter, ValidationError
 
 from src.models.registry import (
@@ -42,26 +42,6 @@ def build_upload_filename(table_name: UploadTables) -> str:
     ms = now.microsecond // 1000  # microseconds -> milliseconds (0-999)
     filetype = SCHEMA_REGISTRY[table_name].filetype
     return f"{date_part}_{ms:03d}_{table_name}.{filetype.value}"
-
-
-def validate_uploaded_file(table_name: UploadTables, upload_file: UploadFile) -> None:
-    """Validate the input file for uploading to the Data Platform."""
-    schema = SCHEMA_REGISTRY.get(table_name)
-    if schema is None:
-        raise HTTPException(
-            status_code=400, detail=f"Unsupported table for upload: {table_name}"
-        )
-    if upload_file.filename is None:
-        raise HTTPException(
-            status_code=400, detail="Missing filename in the uploaded file."
-        )
-    filetype = upload_file.filename.split(".")[-1]
-    if not upload_file.filename.endswith(schema.filetype.value):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file format *.{filetype} for table '{table_name}'. "
-            f"Supported file format: *.{schema.filetype.value}",
-        )
 
 
 def validate_file_content(
@@ -154,28 +134,6 @@ def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
             status_code=500,
             detail=f"Unsupported infrastructure: {settings.infrastructure}",
         )
-
-
-def build_upload_csv_template(table_name: UploadTables) -> str:
-    """Generates a csv template for data upload on the given table_name,
-    based on the base model in SCHEMA_REGISTRY."""
-
-    validation_schema = SCHEMA_REGISTRY.get(UploadTables(table_name))
-    if validation_schema is None:
-        raise HTTPException(
-            status_code=400, detail=f"Unsupported table for upload: {table_name}"
-        )
-    row_model = validation_schema.base_model
-    base_column = list(row_model.model_fields.keys())
-    columns = ["id", "mode", *base_column]
-
-    insert_row = ["", "insert", *["PLACEHOLDER" for _ in base_column]]
-    delete_row = ["PLACEHOLDER", "delete", *["" for _ in base_column]]
-    update_row = ["PLACEHOLDER", "update", *["PLACEHOLDER" for _ in base_column]]
-
-    rows = [columns, insert_row, update_row, delete_row]
-
-    return "\n".join(";".join(row) for row in rows) + "\n"
 
 
 if __name__ == "__main__":

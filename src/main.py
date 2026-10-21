@@ -10,9 +10,7 @@ from sqlmodel import Session
 
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
 from src.data_upload import (
-    build_upload_csv_template,
     validate_file_content,
-    validate_uploaded_file,
     write_file_to_storage,
 )
 from src.db_operations import get_db_table, table_is_empty, write_to_database
@@ -21,6 +19,10 @@ from src.models.registry import UploadTables
 from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
 from src.parser import parse_csv
 from src.preprocessing import prepare_dataframe
+from src.utils.api_utils import (
+    build_upload_csv_template,
+    validate_uploaded_file,
+)
 
 load_dotenv()
 
