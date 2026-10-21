@@ -23,7 +23,7 @@ def get_max_mustermann():
 
 
 def test_insert(phenobase_db_minimal):
-    """Test inserting data into the database."""
+    """Test insert model , just testing a few columns, not all of them."""
 
     data_dict = {
         "mode": UploadModes.INSERT,
@@ -48,7 +48,58 @@ def test_insert(phenobase_db_minimal):
     result = validate_file_content(df=prep_df, table_name=UploadTables.CROP_TYPE)
     assert len(result) == 1
 
-    # Code is required, so we  expect a validation error
-    prep_df = prep_df.drop(columns=["description"], errors="ignore")
+    # creator_id is required
+    prep_df = prep_df.drop(columns=["creator_id"], errors="ignore")
     with pytest.raises(UploadValidationError):
         validate_file_content(df=prep_df, table_name=UploadTables.CROP_TYPE)
+
+
+def test_delete(phenobase_db_minimal):
+    """Test delete model, just testing a few columns, not all of them."""
+
+    data_dict = {
+        "mode": UploadModes.DELETE,
+        "id": 1,
+        "additional_column": "not neeeded.",  # This column should be dropped during validation
+    }
+    raw_df = pd.DataFrame([data_dict])
+    prep_df = prepare_dataframe(parsed_df=raw_df, user=get_max_mustermann())
+
+    # Additional column should be dropped during validation
+    validated_entry = validate_file_content(
+        df=prep_df, table_name=UploadTables.CROP_TYPE
+    )[0]
+    assert not hasattr(validated_entry, "additional_column")
+
+    # Id is required
+    prep_df = prep_df.drop(columns=["id"], errors="ignore")
+    with pytest.raises(UploadValidationError):
+        validate_file_content(df=prep_df, table_name=UploadTables.CROP_TYPE)
+
+
+
+# def test_update(phenobase_db_minimal):
+#     """Test update model, just testing a few columns, not all of them."""
+#
+#     data_dict = {
+#         "mode": UploadModes.UPDATE,
+#         "id": 1,
+#         "name": "test_crop",
+#         "code": "TC001",
+#         "description": "A test crop type for unit testing.",
+#         "doc_path": "doc/TC001.pdf",
+#         "additional_column": "not neeeded.",  # This column should be dropped during validation
+#     }
+#     raw_df = pd.DataFrame([data_dict])
+#     prep_df = prepare_dataframe(parsed_df=raw_df, user=get_max_mustermann())
+#     print(prep_df)
+#
+#     # Additional column should be dropped during validation
+#     validated_entry = validate_file_content(
+#         df=prep_df, table_name=UploadTables.CROP_TYPE
+#     )[0]
+#     assert not hasattr(validated_entry, "additional_column")
+#
+#     # Id is required, so we expect a validation error if we drop it
+#     prep_df = prep_df.drop(columns=["name"], errors="ignore")
+#     validate_file_content(df=prep_df, table_name=UploadTables.CROP_TYPE)
