@@ -41,7 +41,7 @@ def build_upload_filename(table_name: UploadTables) -> str:
     return f"{date_part}_{ms:03d}_{table_name}.{filetype.value}"
 
 
-def write_file_to_storage(table_name: UploadTables, data: bytes) -> None:
+def write_logfile(table_name: UploadTables, data: bytes) -> None:
     """Upload a file to the storage location (NAS or local) based on the infrastructure setting."""
 
     def _write_to_local_storage(path: Path, data: bytes) -> None:

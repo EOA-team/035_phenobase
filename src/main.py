@@ -9,9 +9,6 @@ from fastapi import Depends, FastAPI, HTTPException, Response, UploadFile
 from sqlmodel import Session
 
 from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
-from src.data_upload import (
-    write_file_to_storage,
-)
 from src.db_operations import get_db_table, table_is_empty, write_to_database
 from src.db_session import get_db_session
 from src.models.registry import UploadTables
@@ -22,6 +19,7 @@ from src.utils.api_utils import (
     build_upload_csv_template,
     validate_uploaded_file,
 )
+from src.utils.log_utils import write_logfile
 from src.validation import validate_file_content
 
 load_dotenv()
@@ -156,9 +154,8 @@ def upload_file(
     prep_df = prepare_dataframe(parsed_df=raw_df, user=current_user)
     validated_rows = validate_file_content(df=prep_df, table_name=table_name)
     write_to_database(session=session, table_name=table_name, rows=validated_rows)
-
     upload_csv = prep_df.to_csv(index=False, sep=";", encoding="utf-8")
-    write_file_to_storage(table_name=table_name, data=upload_csv.encode("utf-8"))
+    write_logfile(table_name=table_name, data=upload_csv.encode("utf-8"))
 
     return Response(
         content=f"File {upload_file.filename}  successfully commited to Data Platform",

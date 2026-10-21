@@ -1,7 +1,3 @@
-"""Reference: simplified, atomic DB writer for uploaded rows, one function per mode.
-Intended to replace ``write_to_database`` in ``src/data_upload.py``.
-"""
-
 from typing import cast
 
 import pandas as pd
