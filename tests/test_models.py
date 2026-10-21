@@ -77,29 +77,33 @@ def test_delete(phenobase_db_minimal):
         validate_file_content(df=prep_df, table_name=UploadTables.CROP_TYPE)
 
 
+def test_update(phenobase_db_minimal):
+    """Test update model, just testing a few columns, not all of them."""
 
-# def test_update(phenobase_db_minimal):
-#     """Test update model, just testing a few columns, not all of them."""
-#
-#     data_dict = {
-#         "mode": UploadModes.UPDATE,
-#         "id": 1,
-#         "name": "test_crop",
-#         "code": "TC001",
-#         "description": "A test crop type for unit testing.",
-#         "doc_path": "doc/TC001.pdf",
-#         "additional_column": "not neeeded.",  # This column should be dropped during validation
-#     }
-#     raw_df = pd.DataFrame([data_dict])
-#     prep_df = prepare_dataframe(parsed_df=raw_df, user=get_max_mustermann())
-#     print(prep_df)
-#
-#     # Additional column should be dropped during validation
-#     validated_entry = validate_file_content(
-#         df=prep_df, table_name=UploadTables.CROP_TYPE
-#     )[0]
-#     assert not hasattr(validated_entry, "additional_column")
-#
-#     # Id is required, so we expect a validation error if we drop it
-#     prep_df = prep_df.drop(columns=["name"], errors="ignore")
-#     validate_file_content(df=prep_df, table_name=UploadTables.CROP_TYPE)
+    data_dict = {
+        "mode": UploadModes.UPDATE,
+        "id": 1,
+        "name": "test_crop",
+        "code": "TC001",
+        "description": "A test crop type for unit testing.",
+        "doc_path": "doc/TC001.pdf",
+        "additional_column": "not neeeded.",  # This column should be dropped during validation
+    }
+    raw_df = pd.DataFrame([data_dict])
+    prep_df = prepare_dataframe(parsed_df=raw_df, user=get_max_mustermann())
+
+    # Additional column should be dropped during validation
+    validated_entry = validate_file_content(
+        df=prep_df, table_name=UploadTables.CROP_TYPE
+    )[0]
+    assert not hasattr(validated_entry, "additional_column")
+
+    # At least one column required for update
+    prep_df = prep_df.drop(columns=["name", "code", "description"], errors="ignore")
+    result = validate_file_content(df=prep_df, table_name=UploadTables.CROP_TYPE)
+    assert len(result) == 1
+
+    # When also dropping doc_path there is no column left for update, so validation should fail
+    prep_df = prep_df.drop(columns=["doc_path"], errors="ignore")
+    with pytest.raises(UploadValidationError):
+        validate_file_content(df=prep_df, table_name=UploadTables.CROP_TYPE)

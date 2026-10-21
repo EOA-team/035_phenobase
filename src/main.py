@@ -12,7 +12,7 @@ from src.auth import allow_roles, generate_api_key_hash_pair, get_current_user
 from src.db_operations import get_db_table, table_is_empty, write_to_database
 from src.db_session import get_db_session
 from src.models.registry import UploadTables
-from src.models.tables.user import APIKeyHashRead, UserRead, UserRole
+from src.models.tables.user import APIKeyHashRead, UserRead, UserRole, User
 from src.parser import parse_csv
 from src.preprocessing import prepare_dataframe
 from src.utils.api_utils import (
@@ -134,7 +134,7 @@ def upload_file(
     table_name: UploadTables,
     upload_file: UploadFile,
     current_user: Annotated[
-        UserRead, Depends(allow_roles(UserRole.writer, UserRole.admin))
+        User, Depends(allow_roles(UserRole.writer, UserRole.admin))
     ],
     session: Annotated[Session, Depends(get_db_session)],
 ):

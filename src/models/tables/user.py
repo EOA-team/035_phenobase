@@ -64,11 +64,11 @@ class UserUpdate(Update):
     """For updating id, mode and at least one mutable field are needed."""
 
     f_account: str | None = Field(default=None, sa_type=TEXT, unique=True)
-    firstname: str | None = Field(sa_type=TEXT)
-    lastname: str | None = Field(sa_type=TEXT)
-    status: UserStatus | None = Field(sa_type=TEXT)
+    firstname: str | None = Field(default=None, sa_type=TEXT)
+    lastname: str | None = Field(default=None, sa_type=TEXT)
+    status: UserStatus | None = Field(default=None, sa_type=TEXT)
     role: UserRole | None = Field(default=None, sa_type=TEXT)
-    email: str | None = Field(sa_type=TEXT)
+    email: str | None = Field(default=None, sa_type=TEXT)
     key_hash: str | None = Field(default=None, max_length=64, unique=True)
 
 
