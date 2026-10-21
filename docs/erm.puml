@@ -70,7 +70,6 @@ entity "PLOT_COLLECTION" as pc {
   name : TEXT <<unique>>"
   category : TEXT
   crs : TEXT
-  uploaded_at : TIMESTAMPTZ
 }
 
 entity "PLOT" as plot {
