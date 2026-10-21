@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 from paramiko import SSHClient
 
-from src.nas_helper import (
+from src.utils.nas_utils import (
     FileSizeUnit,
 )
 

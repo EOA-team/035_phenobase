@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from sqlmodel import SQLModel
 
-from src.db import open_db_session
+from src.db_session import open_db_session
 from src.models.tables.user import User
 from src.settings import DeployStage, Settings
 

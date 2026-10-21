@@ -4,7 +4,7 @@ Each ``*Row`` type alias is the discriminated union used to validate one uploade
 record: pydantic uses ``mode`` to choose the Insert, Update, or Delete variant during runtime.
 """
 
-from typing import Annotated
+from typing import Annotated, Any, Protocol
 
 from pydantic import Field
 
@@ -33,6 +33,21 @@ from src.models.tables.variable import (
     VariableInsert,
     VariableUpdate,
 )
+
+
+class UploadRow(Protocol):
+    """Structural type for Insert/Update/Delete row models."""
+
+    mode: object
+
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]: ...
+
+
+class UploadRowWithId(UploadRow, Protocol):
+    """Row model that also carries a primary key (Update/Delete)."""
+
+    id: int
+
 
 type CropTypeRow = Annotated[
     CropTypeInsert | CropTypeUpdate | CropTypeDelete,

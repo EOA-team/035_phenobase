@@ -9,13 +9,13 @@ import smbclient
 from dotenv import load_dotenv
 from sqlmodel import Session, select
 
-from src.db import get_engine_postgresql
+from src.db_session import get_engine_postgresql
 from src.models.tables.user import User
-from src.nas_helper import Password as NasPw
-from src.nas_helper import User as NasUser
-from src.nas_helper import build_unc_path, connect_to_nas
 from src.scripts.script_utils import confirm_production
 from src.settings import DeployStage, Infrastructure, Settings
+from src.utils.nas_utils import Password as NasPw
+from src.utils.nas_utils import User as NasUser
+from src.utils.nas_utils import build_unc_path, connect_to_nas
 
 load_dotenv()
 # Real users data, that can be used for testing

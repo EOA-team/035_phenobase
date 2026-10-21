@@ -4,7 +4,7 @@ Warning: All data in the database will be lost."""
 from dotenv import load_dotenv
 from sqlmodel import SQLModel
 
-from src.db import get_engine_postgresql
+from src.db_session import get_engine_postgresql
 
 # Tables used by SQLModel metadata
 from src.models.tables import crop_type, treatment, unit, user, variable  # noqa: F401

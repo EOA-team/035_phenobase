@@ -5,7 +5,7 @@ is accessible and functioning correctly.
 import pytest
 from sqlalchemy import text
 
-from src.db import get_engine_postgresql
+from src.db_session import get_engine_postgresql
 from src.settings import Infrastructure, Settings
 
 EXPECTED_VERSIONS = {
